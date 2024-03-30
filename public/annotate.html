@@ -90,6 +90,7 @@
         function getAllPayments() {
             loader = new Loader($("main"))
             getPayments({ "begin": $("#begin").val(), "end": $("#end").val() }).then((res) => {
+                $("table").empty()
                 getOptions().then((optionsRes) => {
                     var options = ""
                     for (option of optionsRes.data) {

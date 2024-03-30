@@ -91,14 +91,14 @@ def get_payments(req: https_fn.CallableRequest):
         payments, req.data.get("begin"), req.data.get("end")
     )
     user_payments = _user_ref(req.auth.uid).child("payments")
-    for payment in payments_in_timeframe:
+    for payment in payments:
         user_payments.child(str(payment.get("id"))).update(
             {
                 "account": payment.get("monetary_account_id"),
                 "features": payment.get("features"),
             }
         )
-    return payments
+    return payments_in_timeframe
 
 
 @https_fn.on_call(region="europe-west1")
@@ -191,7 +191,8 @@ def get_chart(req: https_fn.CallableRequest):
 
 def _get_payments_in_timeframe(payments, begin: str, end: str):
     import datetime
-
+    print(begin)
+    print(end)
     payments_in_timeframe = []
     if begin or end:
         begin_time = datetime.datetime.fromisoformat(begin) if begin else None
