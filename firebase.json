@@ -20,6 +20,28 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/callback",
+        "destination": "/callback.html"
+      },
+      {
+        "source": "/auth",
+        "destination": "/auth.html"
+      },
+      {
+        "source": "/settings",
+        "destination": "/settings.html"
+      },
+      {
+        "source": "/annotate",
+        "destination": "/annotate.html"
+      },
+      {
+        "source": "/chart",
+        "destination": "/chart.html"
+      }
     ]
   }
 }

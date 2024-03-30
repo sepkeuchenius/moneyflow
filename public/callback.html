@@ -29,58 +29,21 @@
 </head>
 
 <body>
-  <button>Login or Create account</button>
+  test
   <script src="utils.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-
       try {
         var userExists;
         var createUser;
         var login
         let app = firebase.app();
-        saveUser = functions.httpsCallable('save_user');
-        getAuthUrl = functions.httpsCallable('get_auth_url');
-        hasSavedAccessToken = functions.httpsCallable('has_saved_access_token');
         firebase.auth().onAuthStateChanged(async function (loadedUser) {
           if (loadedUser) {
-            console.log(loadedUser.uid)
-            hasSavedAccessToken().then((res)=>{
-              console.log(res)
-              if (!res.data){
-                getAuthUrl().then((res) => { window.open(res.data, "_blank") })
-              }
-              else {
-                window.open("/settings", "_self")
-              }
-            })
+            console.log('test')
           }
           else {
-            firebase.auth()
-              .signInWithPopup(provider)
-              .then((result) => {
-                /** @type {firebase.auth.OAuthCredential} */
-                var credential = result.credential;
-
-                // This gives you a Google Access Token. You can use it to access the Google API.
-                var token = credential.accessToken;
-                saveUser({"google_access_token": token}).then((res)=>{
-                  console.log(res)
-                })
-                // The signed-in user info.
-                var user = result.user;
-                // IdP data available in result.additionalUserInfo.profile.
-                // ...
-              }).catch((error) => {
-                // Handle Errors here.
-                var errorCode = error.code;
-                var errorMessage = error.message;
-                // The email of the user's account used.
-                var email = error.email;
-                // The firebase.auth.AuthCredential type that was used.
-                var credential = error.credential;
-                // ...
-              });
+            console.log("user not logged in.")
           }
         })
       } catch (e) {

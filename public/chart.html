@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Welcome to Firebase Hosting</title>
+
+    <!-- update the version number as needed -->
+    <script defer src="/__/firebase/10.9.0/firebase-app-compat.js"></script>
+    <!-- include only the Firebase features as you need -->
+    <script defer src="/__/firebase/10.9.0/firebase-auth-compat.js"></script>
+    <script defer src="/__/firebase/10.9.0/firebase-database-compat.js"></script>
+    <script defer src="/__/firebase/10.9.0/firebase-firestore-compat.js"></script>
+    <script defer src="/__/firebase/10.9.0/firebase-functions-compat.js"></script>
+    <script defer src="/__/firebase/10.9.0/firebase-messaging-compat.js"></script>
+    <script defer src="/__/firebase/10.9.0/firebase-storage-compat.js"></script>
+    <script defer src="/__/firebase/10.9.0/firebase-analytics-compat.js"></script>
+    <script defer src="/__/firebase/10.9.0/firebase-remote-config-compat.js"></script>
+    <script defer src="/__/firebase/10.9.0/firebase-performance-compat.js"></script>
+    <!-- 
+      initialize the SDK after all desired features are loaded, set useEmulator to false
+      to avoid connecting the SDK to running emulators.
+    -->
+    <script defer src="/__/firebase/init.js?useEmulator=true"></script>
+    <style>
+        tr.positive {
+            background: rgb(201 230 197);
+        }
+
+        tr {
+            background-color: rgb(253 223 223);
+            padding: 10px;
+            margin: 87px;
+            border-radius: 20px;
+        }
+
+        tr.annotated {
+            background: rgb(223 242 253);
+        }
+
+        tr.predicted {
+            background-color: aquamarine;
+        }
+
+        td {
+            padding: 10px;
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Maitree:wght@200;300;400;500;600;700&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+        rel="stylesheet">
+    <link href="styles/styles.css" rel="stylesheet">
+</head>
+
+<body>
+    <header>
+        MoneyFlow
+        <nav>
+            <a href="/annotate">Annotate</a>
+            <a href="/settings">Settings</a>
+            <a href="/chart">Chart</a>
+        </nav>
+    </header>
+    <main>
+        Begin: <input type="date" name="begin" id="begin"><br>
+        End: <input type="date" name="end" id="end">
+        <div id="chart"></div>
+    </main>
+    <script src="utils.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            try {
+                $('input').on('change', loadChart)
+                var loader = new Loader($("main"))
+                var userExists;
+                var createUser;
+                var login
+                let app = firebase.app();
+                firebase.auth().onAuthStateChanged(async function (loadedUser) {
+                    if (loadedUser) {
+                        console.log(loadedUser.uid)
+                        hasSavedAccessToken().then((res) => {
+                            console.log(res)
+                            if (!res.data) {
+                                getAuthUrl().then((res) => { window.open(res.data, "_blank") })
+                            }
+                            else {
+                                loadChart();
+                            }
+                        })
+                    }
+                    else {
+                        firebaseLogin()
+                    }
+                })
+            } catch (e) {
+                console.error(e);
+                loadEl.textContent = 'Error loading the Firebase SDK, check the console.';
+            }
+            function loadChart() {
+                loader.startLoader()
+                getChart({"begin": $("#begin").val(), "end": $("#end").val()}).then((res) => {
+                    loader.pauseLoader()
+                    $("#begin").val(res.data.begin)
+                    $("#end").val(res.data.end)
+                    $("#chart").html(res.data.chart)
+                })
+            }
+        });
+    </script>
+</body>
+
+</html>

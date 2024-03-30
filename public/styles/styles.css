@@ -1,0 +1,68 @@
+:root {
+    --first: #E1F0DA;
+    --second: #D4E7C5;
+    --third: #BFD8AF;
+    --fourth: #99BC85;
+    --black: #DBE7C9;
+}
+header {
+    height: 40px;
+    background: var(--first);
+    position: fixed;
+    margin: 0px;
+    padding: 0;
+    width: 100%;
+    color: var(--fourth);
+    padding: 7px 20px;
+    box-sizing: border-box;
+}
+body{
+    padding:0;
+    margin:0;
+}
+main {
+    padding:20px;
+    padding-top:50px
+}
+* {
+    font-family: "Poppins", sans-serif;
+    font-weight: 300;
+    font-style: normal;
+}
+nav {
+    display: inline-block;
+    float: right;   
+}
+nav a {
+    color: inherit;
+    text-decoration: none;
+    border-bottom:none;
+    margin-right:10px;
+    background:var(--fourth);
+    border-radius:5px;
+    padding:2px 8px;
+    margin-top:-5px;
+    color:var(--first)
+}
+tr.positive {
+    background: rgb(201 230 197);
+}
+
+tr {
+    background-color: var(--second);
+    padding: 10px;
+    margin: 87px;
+    border-radius: 20px;
+}
+
+tr.annotated {
+    background: var(--third)
+}
+
+tr.predicted {
+    background-color: var(--fourth);
+}
+
+td {
+    padding: 10px;
+}

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Welcome to Firebase Hosting</title>
+
+    <!-- update the version number as needed -->
+    <script defer src="/__/firebase/10.9.0/firebase-app-compat.js"></script>
+    <!-- include only the Firebase features as you need -->
+    <script defer src="/__/firebase/10.9.0/firebase-auth-compat.js"></script>
+    <script defer src="/__/firebase/10.9.0/firebase-database-compat.js"></script>
+    <script defer src="/__/firebase/10.9.0/firebase-firestore-compat.js"></script>
+    <script defer src="/__/firebase/10.9.0/firebase-functions-compat.js"></script>
+    <script defer src="/__/firebase/10.9.0/firebase-messaging-compat.js"></script>
+    <script defer src="/__/firebase/10.9.0/firebase-storage-compat.js"></script>
+    <script defer src="/__/firebase/10.9.0/firebase-analytics-compat.js"></script>
+    <script defer src="/__/firebase/10.9.0/firebase-remote-config-compat.js"></script>
+    <script defer src="/__/firebase/10.9.0/firebase-performance-compat.js"></script>
+    <!-- 
+      initialize the SDK after all desired features are loaded, set useEmulator to false
+      to avoid connecting the SDK to running emulators.
+    -->
+    <script defer src="/__/firebase/init.js?useEmulator=true"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Maitree:wght@200;300;400;500;600;700&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+        rel="stylesheet">
+    <link href="styles/styles.css" rel="stylesheet">
+</head>
+
+<body>
+    <header>
+        MoneyFlow
+        <nav>
+            <a href="/annotate">Annotate</a>
+            <a href="/settings">Settings</a>
+            <a href="/chart">Chart</a>
+        </nav>
+    </header>
+    <main>
+        <h1>
+            Choose your accounts
+        </h1>
+        <div id="accounts">
+
+        </div>
+        <h1>
+            Choose a start date
+
+        </h1>
+        <input type="date" value="Begin date" name="begin_date" id="start_date">
+        <input type="submit" value="Continue" onclick="saveAccounts()">
+    </main>
+
+    <script src="utils.js"></script>
+    <script>
+        var loader;
+        function saveAccounts() {
+            setAccounts = functions.httpsCallable('set_usable_accounts');
+            const accounts = $('input[type="checkbox"][name="accounts"]:checked').map(function () { return this.value; }).get();
+            loader.startLoader();
+            setAccounts({ "accounts": accounts, "start_date": $("#start_date").val() }).then((res) => {
+                if (res.data == "OK") {
+                    window.open("/annotate", "_self")
+                }
+            })
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            try {
+                loader = new Loader($("#accounts"))
+                var userExists;
+                var createUser;
+                var login
+                let app = firebase.app();
+                saveUser = functions.httpsCallable('save_user');
+                getAuthUrl = functions.httpsCallable('get_auth_url');
+                getAccounts = functions.httpsCallable('get_accounts');
+                hasSavedAccessToken = functions.httpsCallable('has_saved_access_token');
+                firebase.auth().onAuthStateChanged(async function (loadedUser) {
+                    if (loadedUser) {
+                        console.log(loadedUser.uid)
+                        hasSavedAccessToken().then((res) => {
+                            console.log(res)
+                            if (!res.data) {
+                                getAuthUrl().then((res) => { window.open(res.data, "_blank") })
+                            }
+                            else {
+                                getAccounts().then((res) => {
+                                    console.log(res)
+                                    for (account of res.data) {
+                                        const input = $("<input>")
+                                        input.attr("id", account.id)
+                                        input.attr("type", "checkbox")
+                                        input.attr("value", account.id)
+                                        input.attr("name", "accounts")
+                                        const label = $("<label>")
+                                        label.attr("for", account.id)
+                                        label.text(account.description)
+                                        $("#accounts").append(input)
+                                        $("#accounts").append(label)
+                                        $("#accounts").append($("<br>"))
+                                    }
+                                    loader.pauseLoader()
+                                    //<label for="{{ account.id_ }}">{{ account.description }}</label> <br>
+
+                                })
+                            }
+                        })
+                    }
+                    else {
+                        firebaseLogin()
+                    }
+                })
+            } catch (e) {
+                console.error(e);
+                loadEl.textContent = 'Error loading the Firebase SDK, check the console.';
+            }
+        });
+    </script>
+</body>
+
+</html>
