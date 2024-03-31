@@ -142,8 +142,7 @@ def _get_payments_for_accounts(
             PAYMENT_TO_ACCOUNT[payment.id_] = account_id
             if _get_date(payment) > start_date:
                 if (
-                    float(payment.amount.value) < 0
-                    and payment.counterparty_alias.pointer.value not in _own_ibans()
+                    payment.counterparty_alias.pointer.value not in _own_ibans()
                 ):
                     payments.append(payment)
             else:

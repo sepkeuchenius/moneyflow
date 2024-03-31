@@ -103,9 +103,13 @@ def get_payments(req: https_fn.CallableRequest):
 
 @https_fn.on_call(region="europe-west1")
 def get_options(req: https_fn.CallableRequest):
-    return info_model.generate_list_of_categories(
+    outgoing_categories = info_model.generate_list_of_categories(
         info_model.OUTGOING_INFORMATION_MODEL, []
     )
+    incoming_categories = info_model.generate_list_of_categories(
+        info_model.INCOME_INFORMATION_MODEL, []
+    )
+    return outgoing_categories + incoming_categories + info_model.SPECIAL_CATEGORIES
 
 
 @https_fn.on_call(

@@ -1,7 +1,7 @@
 from typing import List
 
 OUTGOING_INFORMATION_MODEL = {
-    "UIT": {
+    "*": {
         "HUIS": {
             "INTERNET": [],
             "HUUR": [],
@@ -83,8 +83,12 @@ OUTGOING_INFORMATION_MODEL = {
     }
 }
 INCOME_INFORMATION_MODEL = {
-    "IN": {"SALARIS": {"MAARTJE": [], "SEP": []}, "KM VERGOEDING": []},
+    "*": {"SALARIS": [], "VERGOEDING": [], "RENTE": []},
 }
+
+SPECIAL_CATEGORIES = [
+    "IGNORE"
+]
 
 
 def generate_list_of_categories(
@@ -98,3 +102,6 @@ def generate_list_of_categories(
         else:
             raise ValueError("Only use dict and list as values in information models.")
     return categories_list
+
+
+# class InfoModel(BaseModel):
