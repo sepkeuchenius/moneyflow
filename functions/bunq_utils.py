@@ -84,7 +84,6 @@ def generate_payments(
 
 def get_payment_features(uid, payment_id):
     if saved_features := get_saved_payment_features(uid, payment_id):
-        print("found")
         return saved_features
     payment_account = _get_payment_account(uid, payment_id)
     return _get_payment_features(
@@ -208,7 +207,6 @@ def _get_access_token(code):
 def _ensure_api_context(uid):
     api_context = _get_api_context(uid)
     api_context.ensure_session_active()
-    print(api_context.to_json())
     BunqContext.load_api_context(api_context)
 
 

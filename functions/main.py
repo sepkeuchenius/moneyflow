@@ -16,7 +16,7 @@ from bunq_utils import (
     get_saved_payments_with_features,
     BUNQ_CLIENT_SECRET,
     BUNQ_OAUTH_CLIENT_ID,
-    AUTH_PARAMS
+    AUTH_PARAMS,
 )
 from db_utils import _user_ref, _ensure_user_account
 import info_model
@@ -65,17 +65,29 @@ def has_saved_access_token(req: https_fn.CallableRequest):
 )
 def get_accounts(req: https_fn.CallableRequest):
     _ensure_api_context(req.auth.uid)
-    return _get_serialized_accounts()
+    all_accounts = _get_serialized_accounts()
+    usable_accounts = _get_usable_accounts(req.auth.uid) or []
+    for account in all_accounts:
+        account["usable"] = str(account.get("id")) in usable_accounts
+    return all_accounts
 
 
 def _get_usable_accounts(uid):
     return _user_ref(uid).get().get("accounts")
 
 
-def _get_start_date(uid):
+def _get_selected_date(date_type: str, selected_iso: str, uid):
     import datetime
-
-    return datetime.datetime.fromisoformat(_user_ref(uid).get().get("start_date"))
+    if selected_iso:
+        time = datetime.datetime.fromisoformat(selected_iso)
+        _user_ref(uid).child(date_type).set(time.isoformat())
+        return time
+    elif user_saved_date := _user_ref(uid).child(date_type).get():
+        return datetime.datetime.fromisoformat(user_saved_date)
+    elif date_type == "start_date":
+        return datetime.datetime.now() - datetime.timedelta(days=3)
+    else:
+        return datetime.datetime.now()
 
 
 @https_fn.on_call(
@@ -85,11 +97,14 @@ def get_payments(req: https_fn.CallableRequest):
     _ensure_api_context(req.auth.uid)
     _ensure_user_account(req.auth.uid)
     payments = _get_serialized_payments(
-        _get_usable_accounts(req.auth.uid), _get_start_date(req.auth.uid)
+        _get_usable_accounts(req.auth.uid),
+        _get_selected_date("start_date", req.data.get("begin"), req.auth.uid),
     )
-    payments_in_timeframe = _get_payments_in_timeframe(
-        payments, req.data.get("begin"), req.data.get("end")
+    payments_in_timeframe = _filter_payments_in_timeframe(
+        payments, req.data.get("begin"), req.data.get("end"), req.auth.uid
     )
+    start_date = _get_date(payments_in_timeframe[0]).strftime("%Y-%m-%d")
+    end_date = _get_date(payments_in_timeframe[-1]).strftime("%Y-%m-%d")
     user_payments = _user_ref(req.auth.uid).child("payments")
     for payment in payments:
         user_payments.child(str(payment.get("id"))).update(
@@ -98,7 +113,7 @@ def get_payments(req: https_fn.CallableRequest):
                 "features": payment.get("features"),
             }
         )
-    return payments_in_timeframe
+    return {"payments": payments_in_timeframe, "begin": start_date, "end": end_date}
 
 
 @https_fn.on_call(region="europe-west1")
@@ -121,6 +136,14 @@ def set_usable_accounts(req: https_fn.CallableRequest):
         {"accounts": req.data.get("accounts"), "start_date": req.data.get("start_date")}
     )
     return "OK"
+
+
+@https_fn.on_call(
+    region="europe-west1", secrets=[BUNQ_OAUTH_CLIENT_ID, BUNQ_CLIENT_SECRET]
+)
+def get_usable_accounts(req: https_fn.CallableRequest):
+    _ensure_user_account(req.auth.uid)
+    return _user_ref(req.auth.uid).child("accounts").get()
 
 
 @https_fn.on_call(
@@ -180,8 +203,8 @@ def get_chart(req: https_fn.CallableRequest):
 
     _user_ref(req.auth.uid).child("payments").get()
     payments = get_saved_payments_with_annotation(req.auth.uid)
-    payments_in_timeframe = _get_payments_in_timeframe(
-        payments, req.data.get("begin"), req.data.get("end")
+    payments_in_timeframe = _filter_payments_in_timeframe(
+        payments, req.data.get("begin"), req.data.get("end"), req.auth.uid
     )
     sorted(payments_in_timeframe, key=_get_date)
     start_date = _get_date(payments_in_timeframe[0]).strftime("%Y-%m-%d")
@@ -193,20 +216,16 @@ def get_chart(req: https_fn.CallableRequest):
     }
 
 
-def _get_payments_in_timeframe(payments, begin: str, end: str):
-    import datetime
-    print(begin)
-    print(end)
+def _filter_payments_in_timeframe(
+    payments, selected_begin_iso: str, selected_end_iso: str, uid
+):
+    begin_time = _get_selected_date(date_type="start_date", selected_iso=selected_begin_iso, uid=uid)
+    end_time = _get_selected_date(date_type="end_date", selected_iso=selected_end_iso, uid=uid)
     payments_in_timeframe = []
-    if begin or end:
-        begin_time = datetime.datetime.fromisoformat(begin) if begin else None
-        end_time = datetime.datetime.fromisoformat(end) if end else None
-        for payment in payments:
-            payment_date = _get_date(payment)
-            if ((not begin_time) or payment_date > begin_time) and (
-                (not end_time) or payment_date < end_time
-            ):
-                payments_in_timeframe.append(payment)
-    else:
-        payments_in_timeframe = payments
+    for payment in payments:
+        payment_date = _get_date(payment)
+        if ((not begin_time) or payment_date > begin_time) and (
+            (not end_time) or payment_date < end_time
+        ):
+            payments_in_timeframe.append(payment)
     return payments_in_timeframe

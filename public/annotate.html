@@ -45,6 +45,10 @@
         </nav>
     </header>
     <main>
+        Accounts:
+        <div id="accounts">
+
+        </div>
         Begin: <input type="date" name="begin" id="begin">&nbsp;&nbsp;
         End: <input type="date" name="end" id="end">
         <table id="payments">
@@ -56,6 +60,12 @@
     <script src="utils.js"></script>
     <script src="js/annotate.js"></script>
     <script>
+        function saveAccounts() {
+            setAccounts = functions.httpsCallable('set_usable_accounts');
+            const accounts = $('input[type="checkbox"][name="accounts"]:checked').map(function () { return this.value; }).get();
+            loader.startLoader();
+            setAccounts({ "accounts": accounts }).then(getAllPayments)
+        }
         var loader;
         document.addEventListener('DOMContentLoaded', function () {
             $("input[type='date']").on("change", getAllPayments)
@@ -67,13 +77,16 @@
                 firebase.auth().onAuthStateChanged(async function (loadedUser) {
                     if (loadedUser) {
                         console.log(loadedUser.uid)
-                        hasSavedAccessToken().then((res) => {
+                        hasSavedAccessToken().then(async (res) => {
                             console.log(res)
                             if (!res.data) {
                                 getAuthUrl().then((res) => { window.open(res.data, "_blank") })
                             }
                             else {
-                                getAllPayments()
+                                loader = new Loader($("main"))
+                                await getAllAccounts()
+                                await getAllPayments()
+                                loader.stopLoader()
                             }
                         })
                     }
@@ -86,18 +99,38 @@
                 loadEl.textContent = 'Error loading the Firebase SDK, check the console.';
             }
         });
-
-        function getAllPayments() {
-            loader = new Loader($("main"))
-            getPayments({ "begin": $("#begin").val(), "end": $("#end").val() }).then((res) => {
+        async function getAllAccounts() {
+            await getAccounts().then((res) => {
+                console.log(res)
+                for (account of res.data) {
+                    const input = $("<input>")
+                    input.attr("id", account.id)
+                    input.attr("type", "checkbox")
+                    input.attr("value", account.id)
+                    input.attr("name", "accounts")
+                    input.addClass("account")
+                    const label = $("<label>")
+                    label.attr("for", account.id)
+                    label.text(account.description)
+                    $("#accounts").append(input)
+                    $("#accounts").append(label)
+                    $("#accounts").append($("<br>"))
+                    if (account.usable) {
+                        input.prop("checked", true)
+                    }
+                }
+                $(".account").on("click", saveAccounts)
+            })
+        }
+        async function getAllPayments() {
+            await getPayments({ "begin": $("#begin").val(), "end": $("#end").val() }).then(async (res) => {
                 $("table").empty()
-                getOptions().then((optionsRes) => {
+                await getOptions().then((optionsRes) => {
                     var options = ""
                     for (option of optionsRes.data) {
                         options += `<option value="${option}">${option}</option>`
                     }
-                    for (payment of res.data) {
-                        console.log(payment)
+                    for (payment of res.data.payments) {
                         $('table').append(`
                             <tr id="${payment.id}">
                                 <td class="counterparty_name">${payment.counterparty_alias.name}</td>
@@ -109,11 +142,11 @@
                                 <td></td>
                             </tr>`
                         )
-
                     }
+                    $("#begin").val(res.data.begin)
+                    $("#end ").val(res.data.end)
                     $(".category").on("change", function () { sendAnnotation($(this)) })
                     predictOrAnnotatePayments()
-                    loader.stopLoader()
                 })
             })
         }

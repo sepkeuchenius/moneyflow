@@ -9,6 +9,8 @@ var getPaymentPrediction;
 var getPaymentAnnotation;
 var setPaymentAnnotation;
 var getChart;
+var getAccounts;
+
 class Loader {
     constructor(div, init = true, small = false) {
         this.div = div;
@@ -67,6 +69,7 @@ document.addEventListener('DOMContentLoaded', function () {
     getPaymentAnnotation = functions.httpsCallable('get_payment_annotation');
     setPaymentAnnotation = functions.httpsCallable('set_payment_annotation');
     getChart = functions.httpsCallable('get_chart');
+    getAccounts = functions.httpsCallable('get_accounts');
 
 });
 
