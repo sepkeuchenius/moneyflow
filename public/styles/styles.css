@@ -5,6 +5,7 @@
     --fourth: #99BC85;
     --black: #DBE7C9;
 }
+
 header {
     height: 40px;
     background: var(--first);
@@ -16,53 +17,100 @@ header {
     padding: 7px 20px;
     box-sizing: border-box;
 }
-body{
-    padding:0;
-    margin:0;
+
+body {
+    padding: 0;
+    margin: 0;
 }
+
 main {
-    padding:20px;
-    padding-top:50px
+    padding: 20px;
+    padding-top: 50px
 }
+
 * {
     font-family: "Poppins", sans-serif;
     font-weight: 300;
     font-style: normal;
 }
+
 nav {
     display: inline-block;
-    float: right;   
+    float: right;
 }
+
 nav a {
     color: inherit;
     text-decoration: none;
-    border-bottom:none;
-    margin-right:10px;
-    background:var(--fourth);
-    border-radius:5px;
-    padding:2px 8px;
-    margin-top:-5px;
-    color:var(--first)
+    border-bottom: none;
+    margin-right: 10px;
+    background: var(--fourth);
+    border-radius: 5px;
+    padding: 2px 8px;
+    margin-top: -5px;
+    color: var(--first)
 }
+
 tr.positive {
     background: rgb(201 230 197);
 }
 
 tr {
-    background-color: var(--second);
+    background-color: var(--first);
     padding: 10px;
     margin: 87px;
     border-radius: 20px;
 }
 
 tr.annotated {
-    background: var(--third)
+    background: var(--second)
 }
 
 tr.predicted {
-    background-color: var(--fourth);
+    background-color: var(--third);
 }
 
 td {
     padding: 10px;
+}
+
+.account {
+    border-radius: 10px;
+    border: 3px solid var(--first);
+    display: inline-block;
+    padding: 4px 8px;
+    margin: 1;
+    cursor: pointer;
+    margin: 10px 4px;
+}
+
+.selected {
+    background-color: var(--first);
+}
+
+input, select, button {
+    border: 3px solid var(--first);
+    padding: 4px 8px;
+    border-radius: 10px;
+}
+
+table { 
+    width: 100%;
+    border-collapse: separate; 
+    border-spacing: 0 10px; 
+    margin-top: -10px; /* correct offset on first border spacing if desired */
+}
+td {
+    border-style: solid none;
+    padding: 10px;
+}
+td:first-child {
+    border-left-style: solid;
+    border-top-left-radius: 10px; 
+    border-bottom-left-radius: 10px;
+}
+td:last-child {
+    border-right-style: solid;
+    border-bottom-right-radius: 10px; 
+    border-top-right-radius: 10px; 
 }

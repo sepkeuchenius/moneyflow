@@ -96,24 +96,27 @@ def _get_selected_date(date_type: str, selected_iso: str, uid):
 def get_payments(req: https_fn.CallableRequest):
     _ensure_api_context(req.auth.uid)
     _ensure_user_account(req.auth.uid)
-    payments = _get_serialized_payments(
-        _get_usable_accounts(req.auth.uid),
-        _get_selected_date("start_date", req.data.get("begin"), req.auth.uid),
-    )
-    payments_in_timeframe = _filter_payments_in_timeframe(
-        payments, req.data.get("begin"), req.data.get("end"), req.auth.uid
-    )
-    start_date = _get_date(payments_in_timeframe[0]).strftime("%Y-%m-%d")
-    end_date = _get_date(payments_in_timeframe[-1]).strftime("%Y-%m-%d")
-    user_payments = _user_ref(req.auth.uid).child("payments")
-    for payment in payments:
-        user_payments.child(str(payment.get("id"))).update(
-            {
-                "account": payment.get("monetary_account_id"),
-                "features": payment.get("features"),
-            }
+    if usable_accounts:= _get_usable_accounts(req.auth.uid):
+        payments = _get_serialized_payments(
+            usable_accounts,
+            _get_selected_date("start_date", req.data.get("begin"), req.auth.uid),
         )
-    return {"payments": payments_in_timeframe, "begin": start_date, "end": end_date}
+        payments_in_timeframe = _filter_payments_in_timeframe(
+            payments, req.data.get("begin"), req.data.get("end"), req.auth.uid
+        )
+        start_date = _get_date(payments_in_timeframe[0]).strftime("%Y-%m-%d")
+        end_date = _get_date(payments_in_timeframe[-1]).strftime("%Y-%m-%d")
+        user_payments = _user_ref(req.auth.uid).child("payments")
+        for payment in payments:
+            user_payments.child(str(payment.get("id"))).update(
+                {
+                    "account": payment.get("monetary_account_id"),
+                    "features": payment.get("features"),
+                }
+            )
+        return {"payments": payments_in_timeframe, "begin": start_date, "end": end_date}
+    else:
+        return {"payments": []}
 
 
 @https_fn.on_call(region="europe-west1")
