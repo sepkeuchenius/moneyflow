@@ -30,6 +30,7 @@ PAYMENT_TO_ACCOUNT = {}
 
 def _get_auth_url():
     import urllib.parse
+
     return f"{AUTH_URL}?{urllib.parse.urlencode(AUTH_PARAMS)}"
 
 
@@ -91,7 +92,7 @@ def get_payment_features(uid, payment_id):
     )
 
 
-def get_saved_payments_with_features(uid):
+def get_saved_payments_with_features(uid) -> list:
     return [
         payment
         for payment_id, payment in _user_ref(uid).child("payments").get().items()
@@ -99,12 +100,18 @@ def get_saved_payments_with_features(uid):
     ]
 
 
+def get_all_payments(uid) -> dict:
+    return _user_ref(uid).child("payments").get()
+
+
 def get_saved_payments_with_annotation(uid):
-    return [
-        payment
-        for payment_id, payment in _user_ref(uid).child("payments").get().items()
-        if "annotation" in payment
-    ]
+    if payments := _user_ref(uid).child("payments").get():
+        return [
+            payment
+            for payment_id, payment in payments.items()
+            if "annotation" in payment
+        ]
+    return []
 
 
 def get_saved_payment_features(uid, payment_id):
@@ -140,9 +147,7 @@ def _get_payments_for_accounts(
         for payment in generate_payments(account_id):
             PAYMENT_TO_ACCOUNT[payment.id_] = account_id
             if _get_date(payment) > start_date:
-                if (
-                    payment.counterparty_alias.pointer.value not in _own_ibans()
-                ):
+                if payment.counterparty_alias.pointer.value not in _own_ibans():
                     payments.append(payment)
             else:
                 break
@@ -227,7 +232,7 @@ def _get_access_token_by_code(uid, code):
         raise ValueError("Could not get access token")
 
 
-def _get_serialized_payments(accounts: List[str], start_date: datetime.datetime):
+def get_serialized_payments(accounts: List[str], start_date: datetime.datetime):
     payments = []
     for payment in _get_payments_for_accounts(accounts, start_date):
         payment_info = serialize(payment)

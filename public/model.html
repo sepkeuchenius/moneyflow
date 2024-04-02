@@ -1,0 +1,193 @@
+<html>
+
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Welcome to Firebase Hosting</title>
+
+    <!-- update the version number as needed -->
+    <script defer src="/__/firebase/10.9.0/firebase-app-compat.js"></script>
+    <!-- include only the Firebase features as you need -->
+    <script defer src="/__/firebase/10.9.0/firebase-auth-compat.js"></script>
+    <script defer src="/__/firebase/10.9.0/firebase-database-compat.js"></script>
+    <script defer src="/__/firebase/10.9.0/firebase-firestore-compat.js"></script>
+    <script defer src="/__/firebase/10.9.0/firebase-functions-compat.js"></script>
+    <script defer src="/__/firebase/10.9.0/firebase-messaging-compat.js"></script>
+    <script defer src="/__/firebase/10.9.0/firebase-storage-compat.js"></script>
+    <script defer src="/__/firebase/10.9.0/firebase-analytics-compat.js"></script>
+    <script defer src="/__/firebase/10.9.0/firebase-remote-config-compat.js"></script>
+    <script defer src="/__/firebase/10.9.0/firebase-performance-compat.js"></script>
+    <!-- 
+      initialize the SDK after all desired features are loaded, set useEmulator to false
+      to avoid connecting the SDK to running emulators.
+    -->
+    <script defer src="/__/firebase/init.js?useEmulator=true"></script>
+    <style>
+
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Maitree:wght@200;300;400;500;600;700&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+        rel="stylesheet">
+    <style>
+        .sub {
+            padding-left: 80px;
+            border-left: 1px solid var(--fourth);
+        }
+
+        .category {
+            margin: 10px 0;
+        }
+
+        footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 10px;
+        }
+
+        footer button {
+            position: absolute;
+            right: 100px;
+            bottom: 20px;
+        }
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="styles/styles.css">
+</head>
+
+<body>
+    <header>
+        MoneyFlow
+        <nav>
+            <a href="/annotate">Payments</a>
+            <a href="/settings">Model</a>
+            <a href="/chart">Flow</a>
+        </nav>
+    </header>
+    <main>
+        <div id="in-model">
+            <h3>In</h3>
+        </div>
+        <div id="out-model">
+            <h3>Uit</h3>
+        </div>
+        <footer><button onclick="saveModel()">Save</button></footer>
+    </main>
+    <script src="utils.js"></script>
+    <script>
+        const COLORS = ['rgb(20, 20, 20)', 'rgb(250, 250, 250)']
+        function createCategory() {
+            const element = $(`
+                <div class='category'>
+                    <input type=text name=name placeholder=Name value=*>&nbsp;&nbsp;
+                    <button class='add'>+</button>&nbsp;<button class=remove>-</button>&nbsp;<button class=toggle>^</button>
+                    <div class='sub'></div>
+                </div>
+            `)
+            element.find(".add").on("click", addCategory)
+            element.find(".remove").on("click", removeCategory)
+            element.find(".toggle").on("click", toggleCategory)
+            return element;
+        }
+        function saveModel() {
+            model = getModel()
+            setUserModel(JSON.stringify(model)).then((res)=>{console.log(res.data)})
+        }
+        function toggleCategory() {
+            if ($(this).text() == "^") {
+                $(this).html("&#8964;")
+            }
+            else {
+                $(this).text("^")
+            }
+            $(this).parent().find(".sub").toggle()
+        }
+        function removeCategory() {
+            $(this).parent().remove()
+        }
+        function addCategory() {
+            addCategoryToElement($(this).parent(), "");
+        }
+        function addCategoryToElement(element, name) {
+            const sub = createCategory()
+            sub.find("input").val(name);
+            element.find(".sub").first().prepend(sub)
+            console.log(element.css("background-color"))
+            if (element.hasClass("even")) {
+                sub.addClass("odd")
+            }
+            else {
+                sub.addClass("even")
+            }
+            return sub;
+        }
+        function createFirstCategory(targetElement) {
+            const first = createCategory();
+            first.addClass("even")
+            targetElement.append(first)
+            first.find("input").prop("disabled", true)
+            first.find(".remove").prop("disabled", true)
+        }
+        const loader = new Loader($("main"));
+        createFirstCategory($("#in-model"));
+        createFirstCategory($("#out-model"));
+        function getModel() {
+            const inRoot = $("#in-model").find($(".category")).first();
+            const outRoot = $("#out-model").find($(".category")).first();
+            var model = { "in": { "*": getSubCategories("*", inRoot) }, "out": { "*": getSubCategories("*", outRoot) } }
+            return model;
+        }
+        function getSubCategories(categoryName, categoryElement) {
+            var model = {}
+            categoryElement.find(".sub").first().children(".category").each(function (index, element) {
+                const subCategoryName = $(element).find("input").val();
+                model[subCategoryName] = getSubCategories(subCategoryName, $(element))
+            });
+            if (Object.keys(model).length == 0) {
+                model = []
+            }
+            return model;
+        }
+        function loadModel(model, categoryElement) {
+            categoryElement.find(".sub").first().empty();
+            for (subcategory in model) {
+                console.log(subcategory)
+                subCategoryElement = addCategoryToElement(categoryElement, subcategory);
+                loadModel(model[subcategory], subCategoryElement);
+            }
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            try {
+                let app = firebase.app();
+                firebase.auth().onAuthStateChanged(async function (loadedUser) {
+                    if (loadedUser) {
+                        hasSavedAccessToken().then(async (res) => {
+                            if (!res.data) {
+                                getAuthUrl().then((res) => { window.open(res.data, "_blank") })
+                            }
+                            else {
+                                await getUserModel().then((res) => {
+                                    loadModel(res.data.in["*"], $("#in-model").find(".category").first())
+                                    loadModel(res.data.out["*"], $("#out-model").find(".category").first())
+                                    loader.stopLoader()
+                                })
+                            }
+                        })
+                    }
+                    else {
+                        firebaseLogin()
+                    }
+                })
+            } catch (e) {
+                console.error(e);
+                loadEl.textContent = 'Error loading the Firebase SDK, check the console.';
+            }
+        });
+    </script>
+</body>
+
+</html>

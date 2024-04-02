@@ -39,9 +39,9 @@
     <header>
         MoneyFlow
         <nav>
-            <a href="/annotate">Annotate</a>
-            <a href="/settings">Settings</a>
-            <a href="/chart">Chart</a>
+            <a href="/annotate">Payments</a>
+            <a href="/settings">Model</a>
+            <a href="/chart">Flow</a>
         </nav>
     </header>
     <main>
@@ -115,6 +115,7 @@
         }
         async function getAllPayments() {
             await getPayments({ "begin": $("#begin").val(), "end": $("#end").val() }).then(async (res) => {
+                console.log(res)
                 $("table").empty()
                 await getOptions().then((optionsRes) => {
                     var options = ""

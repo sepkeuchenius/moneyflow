@@ -10,6 +10,9 @@ var getPaymentAnnotation;
 var setPaymentAnnotation;
 var getChart;
 var getAccounts;
+var getUserModel;
+var setUserModel;
+var batchPredict;
 
 class Loader {
     constructor(div, init = true, small = false) {
@@ -70,7 +73,9 @@ document.addEventListener('DOMContentLoaded', function () {
     setPaymentAnnotation = functions.httpsCallable('set_payment_annotation');
     getChart = functions.httpsCallable('get_chart');
     getAccounts = functions.httpsCallable('get_accounts');
-
+    getUserModel = functions.httpsCallable('get_user_model');
+    setUserModel = functions.httpsCallable('set_user_model');
+    batchPredict = functions.httpsCallable('get_batch_prediction');
 });
 
 function logout() {

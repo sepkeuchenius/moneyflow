@@ -1,6 +1,5 @@
 from typing import List, Union
 import plotly.graph_objects as go
-import copy
 import info_model
 
 
@@ -84,9 +83,8 @@ def sum_list(obj):
                 obj[key] = round(obj[key])
 
 
-def create_chart(payments: List[dict]):
-    info_model_in = copy.deepcopy(info_model.INCOME_INFORMATION_MODEL)
-    info_model_out = copy.deepcopy(info_model.OUTGOING_INFORMATION_MODEL)
+def create_chart(payments: List[dict], uid):
+    [info_model_in, info_model_out] = info_model.get_user_model(uid).values()
     categories_in = info_model.generate_list_of_categories(info_model_in, [])
     for payment in payments:
         amount = float(payment["features"]["amount"])
@@ -105,7 +103,6 @@ def create_chart(payments: List[dict]):
                 )
     sum_list(info_model_out)
     sum_list(info_model_in)
-
 
     labels, source, target, value = create_dataset_for_sankey(
         info_model_out["*"], "*", [], [], [], []

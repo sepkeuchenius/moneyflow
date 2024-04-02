@@ -32,7 +32,7 @@
       },
       {
         "source": "/settings",
-        "destination": "/settings.html"
+        "destination": "/model.html"
       },
       {
         "source": "/annotate",
@@ -41,6 +41,10 @@
       {
         "source": "/chart",
         "destination": "/chart.html"
+      },
+      {
+        "source": "/model",
+        "destination": "/model.html"
       }
     ]
   }

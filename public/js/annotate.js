@@ -9,12 +9,10 @@ async function sendAnnotation(element, predict = true) {
         console.log(res)
         annotationLoader.stopLoader()
     })
-    if(predict){
-        await predictOrAnnotatePayments()
+    if (predict) {
+        await predictPayments()
     }
-    else{
-        reloadCategory(element)
-    }
+    reloadCategory(element)
 }
 async function addAnnotation(element) {
     const id = element.parent().parent().attr("id");
@@ -38,24 +36,26 @@ async function addAnnotation(element) {
         }
     })
 }
+function setPrediction(element, category) {
+    element.val(category)
+    element.addClass("predicted")
+    element.parent().parent().addClass("predicted")
+    acceptButton = $("<button>");
+    acceptButton.text("OK")
+    acceptButton.on("click", annotateWithPrediction)
+    element.parent().parent().find("td").last().empty()
+    element.parent().parent().find("td").last().append(acceptButton)
+}
 async function addPrediction(element) {
     const id = element.parent().parent().attr("id");
-    // const counterparty_name = element.parent().parent().find(".counterparty_name").text();
     await getPaymentPrediction(id).then((res) => {
         if (res.data) {
             const category = res.data
-            element.val(category)
-            element.addClass("predicted")
-            element.parent().parent().addClass("predicted")
-            acceptButton = $("<button>");
-            acceptButton.text("OK")
-            acceptButton.on("click", annotateWithPrediction)
-            element.parent().parent().find("td").last().empty()
-            element.parent().parent().find("td").last().append(acceptButton)
+            setPrediction(element, category)
         }
     })
 }
-async function reloadCategory(category){
+async function reloadCategory(category) {
     const categoryLoader = new Loader(category.parent(), init = true, small = true)
     if (!category.hasClass("annotated")) {
         await addAnnotation(category)
@@ -67,11 +67,22 @@ async function reloadCategory(category){
 }
 async function predictOrAnnotatePayments() {
     $(".category").each(async function (index, element) {
-       reloadCategory($(this))
+        reloadCategory($(this))
+    })
+}
+async function predictPayments() {
+    const categoriesToPredict = $(".category").not(".annotated");
+    const predictableIDs = categoriesToPredict.map(function (element) { return $(element).attr("id") }).get();
+    batchPredict(predictableIDs).then((res) => {
+        categoriesToPredict.each(function(index){
+            if(res.data[index]){
+                setPrediction($(this), res.data[index])
+            }
+        })
     })
 }
 async function annotateWithPrediction() {
     category = $(this).parent().parent().find(".category").first()
     console.log(category);
-    await sendAnnotation(category, predict=false);
+    await sendAnnotation(category, predict = false);
 }

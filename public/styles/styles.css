@@ -56,7 +56,7 @@ tr.positive {
 }
 
 tr {
-    background-color: var(--first);
+    background-color: #ddebdc;
     padding: 10px;
     margin: 87px;
     border-radius: 20px;
@@ -68,10 +68,6 @@ tr.annotated {
 
 tr.predicted {
     background-color: var(--third);
-}
-
-td {
-    padding: 10px;
 }
 
 .account {
@@ -88,29 +84,41 @@ td {
     background-color: var(--first);
 }
 
-input, select, button {
-    border: 3px solid var(--first);
+input,
+select,
+button {
+    border: 2px solid var(--first);
     padding: 4px 8px;
     border-radius: 10px;
+    font-size: 12px;
 }
 
-table { 
+input:focus,
+select:focus,
+button:focus {
+    border: 2px solid var(--fourth);
+}
+
+table {
     width: 100%;
-    border-collapse: separate; 
-    border-spacing: 0 10px; 
-    margin-top: -10px; /* correct offset on first border spacing if desired */
+    border-collapse: separate;
+    border-spacing: 0 10px;
+    margin-top: -10px;
+    /* correct offset on first border spacing if desired */
+    font-size: 12px;
+    ;
 }
+
 td {
-    border-style: solid none;
-    padding: 10px;
+    padding: 2px 18px;
 }
+
 td:first-child {
-    border-left-style: solid;
-    border-top-left-radius: 10px; 
+    border-top-left-radius: 10px;
     border-bottom-left-radius: 10px;
 }
+
 td:last-child {
-    border-right-style: solid;
-    border-bottom-right-radius: 10px; 
-    border-top-right-radius: 10px; 
+    border-bottom-right-radius: 10px;
+    border-top-right-radius: 10px;
 }

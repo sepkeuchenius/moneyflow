@@ -1,4 +1,5 @@
 from typing import List
+import copy
 
 OUTGOING_INFORMATION_MODEL = {
     "*": {
@@ -86,9 +87,7 @@ INCOME_INFORMATION_MODEL = {
     "*": {"SALARIS": [], "VERGOEDING": [], "RENTE": []},
 }
 
-SPECIAL_CATEGORIES = [
-    "IGNORE"
-]
+SPECIAL_CATEGORIES = ["IGNORE"]
 
 
 def generate_list_of_categories(
@@ -104,4 +103,14 @@ def generate_list_of_categories(
     return categories_list
 
 
-# class InfoModel(BaseModel):
+def get_user_model(uid):
+    from db_utils import _user_ref
+    import json
+
+    if model_string := _user_ref(uid).child("model").get():
+        return json.loads(model_string)
+    
+    return {
+        "in": copy.deepcopy(INCOME_INFORMATION_MODEL),
+        "out": copy.deepcopy(OUTGOING_INFORMATION_MODEL),
+    }
