@@ -37,7 +37,7 @@ def get_auth_url(req: https_fn.CallableRequest):
 )
 def save_user(req: https_fn.CallableRequest):
     _ensure_user_account(req.auth.uid)
-    _user_ref(req.auth.uid).set(
+    _user_ref(req.auth.uid).update(
         {
             "google_access_token": req.data["google_access_token"],
         }
