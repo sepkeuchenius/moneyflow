@@ -5,7 +5,7 @@ import datetime
 from bunq.sdk.json.converter import serialize
 from bunq.sdk.context.api_context import ApiEnvironmentType, ApiContext
 from bunq.sdk.context.bunq_context import BunqContext
-from db_utils import _user_ref
+from db_utils import _user_ref, _payments_ref
 from firebase_functions import params
 
 ENVIRONMENT_TYPE = ApiEnvironmentType.PRODUCTION
@@ -84,7 +84,7 @@ def generate_payments(
 
 
 def get_payment_features(uid, payment_id):
-    if saved_features := get_saved_payment_features(uid, payment_id):
+    if saved_features := get_saved_payment_features(payment_id):
         return saved_features
     payment_account = _get_payment_account(uid, payment_id)
     return _get_payment_features(
@@ -94,14 +94,16 @@ def get_payment_features(uid, payment_id):
 
 def get_saved_payments_with_features(uid) -> list:
     return [
-        payment
-        for payment_id, payment in _user_ref(uid).child("payments").get().items()
-        if "features" in payment
+        _payments_ref().get(payment_id).get()
+        for payment_id in _user_ref(uid).child("payments").get()
     ]
 
 
 def get_all_payments(uid) -> dict:
-    return _user_ref(uid).child("payments").get()
+    return {
+        payment_id: _payments_ref().get(payment_id).get()
+        for payment_id in _user_ref(uid).child("payments").get()
+    }
 
 
 def get_saved_payments_with_annotation(uid):
@@ -114,12 +116,12 @@ def get_saved_payments_with_annotation(uid):
     return []
 
 
-def get_saved_payment_features(uid, payment_id):
-    return _get_saved_payment_info(uid, payment_id).get("features")
+def get_saved_payment_features(payment_id):
+    return _get_saved_payment_info(payment_id).get("features")
 
 
-def _get_saved_payment_info(uid, payment_id):
-    return _user_ref(uid).child("payments").child(payment_id).get()
+def _get_saved_payment_info(payment_id):
+    return _payments_ref().child(payment_id).get()
 
 
 def _get_payment_features(payment: endpoint.Payment):

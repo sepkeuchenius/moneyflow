@@ -19,7 +19,7 @@ from bunq_utils import (
     BUNQ_OAUTH_CLIENT_ID,
     AUTH_PARAMS,
 )
-from db_utils import _user_ref, _ensure_user_account
+from db_utils import _user_ref, _ensure_user_account, _payments_ref
 import info_model
 
 app = initialize_app()
@@ -108,14 +108,14 @@ def get_payments(req: https_fn.CallableRequest):
         )
         start_date = _get_date(payments_in_timeframe[0]).strftime("%Y-%m-%d")
         end_date = _get_date(payments_in_timeframe[-1]).strftime("%Y-%m-%d")
-        user_payments = _user_ref(req.auth.uid).child("payments")
         for payment in payments:
-            user_payments.child(str(payment.get("id"))).update(
+            _payments_ref().child(str(payment.get("id"))).update(
                 {
                     "account": payment.get("monetary_account_id"),
                     "features": payment.get("features"),
                 }
             )
+            _user_ref(req.auth.uid).child("payments").push(payment.get("id"))
         return {"payments": payments_in_timeframe, "begin": start_date, "end": end_date}
     else:
         return {"payments": []}
