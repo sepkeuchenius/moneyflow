@@ -141,7 +141,7 @@ def get_options(req: https_fn.CallableRequest):
 def set_usable_accounts(req: https_fn.CallableRequest):
     _ensure_user_account(req.auth.uid)
     _user_ref(req.auth.uid).update(
-        {"accounts": req.data.get("accounts"), "start_date": req.data.get("start_date")}
+        {"accounts": req.data.get("accounts")}
     )
     return "OK"
 
