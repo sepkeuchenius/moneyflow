@@ -105,8 +105,8 @@ def get_saved_payments_with_annotation(uid):
     if payments := _user_ref(uid).child("payments").get():
         return [
             payment_info
-            for payment_id, payment in payments.items()
-            if (payment_info := _get_saved_payment_info(payment_id))
+            for payment_id in payments.values()
+            if (payment_info := _get_saved_payment_info(str(payment_id)))
             and payment_info.get("annotation")
         ]
     return []

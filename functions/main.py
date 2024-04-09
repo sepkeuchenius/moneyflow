@@ -314,7 +314,10 @@ def get_chart(req: https_fn.CallableRequest):
 
     payments = get_saved_payments_with_annotation(req.auth.uid)
     payments_in_timeframe = _filter_payments_in_timeframe(
-        payments, req.data.get("begin"), req.data.get("end")
+        payments,
+        _date_from_iso(req.data.get("begin")) or datetime.datetime.now(),
+        _date_from_iso(req.data.get("end"))
+        or datetime.datetime.now() - datetime.timedelta(days=4),
     )
     sorted(payments_in_timeframe, key=_get_date)
     if len(payments_in_timeframe) > 0:
