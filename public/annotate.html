@@ -5,7 +5,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Welcome to Firebase Hosting</title>
+    <title>MoneyFlow</title>
 
     <!-- update the version number as needed -->
     <script defer src="/__/firebase/10.9.0/firebase-app-compat.js"></script>
@@ -53,19 +53,32 @@
         <table id="payments">
 
         </table>
-
+        <h3 id="no-payments" class="tip" style="display: none;">No payments found for this time range</h3>
+        <h3 id="no-accounts" class="tip" style="display: none;">Select an account to load payments</h3>
     </main>
 
     <script src="utils.js"></script>
     <script src="js/annotate.js"></script>
     <script>
+        var accountsLoader;
+        var paymentsLoader;
         function saveAccounts() {
-            $(this).addClass("selected")
+            if(!$(this).hasClass("selected")){
+                $(this).addClass("selected")
+            }
+            else {
+                $(this).removeClass("selected")
+            }
             setAccounts = functions.httpsCallable('set_usable_accounts');
             const accounts = $('.selected').map(function(index, element){return $(element).attr("id")}).get()
+            if(accounts.length == 0){
+                $("#no-accounts").show()
+            }
+            else {
+                $("#no-accounts").hide()
+            }
             setAccounts({ "accounts": accounts }).then(getAllPayments)
         }
-        var loader;
         document.addEventListener('DOMContentLoaded', function () {
             $("input[type='date']").on("change", getAllPayments)
             try {
@@ -77,14 +90,11 @@
                     if (loadedUser) {
                         hasSavedAccessToken().then(async (res) => {
                             if (!res.data) {
-                                getAuthUrl().then((res) => { window.open(res.data, "_blank") })
+                                window.open("/", "_self")
                             }
                             else {
-                                console.log("ok")
-                                loader = new Loader($("main"))
                                 await getAllAccounts()
                                 await getAllPayments()
-                                loader.stopLoader()
                             }
                         })
                     }
@@ -98,7 +108,9 @@
             }
         });
         async function getAllAccounts() {
+            accountsLoader = new Loader($("#accounts"))
             await getAccounts().then((res) => {
+                var no_accounts = true
                 console.log(res)
                 for (account of res.data) {
                     const input = $("<div>")
@@ -108,12 +120,19 @@
                     $("#accounts").append(input)
                     if (account.usable) {
                         input.addClass("selected")
+                        no_accounts = false
                     }
                 }
                 $(".account").on("click", saveAccounts)
+                if(no_accounts){
+                    $("#no-accounts").show();
+                }
             })
+            accountsLoader.stopLoader()
         }
         async function getAllPayments() {
+            $("#no-payments").hide()
+            paymentsLoader = new Loader($("#payments"))
             await getPayments({ "begin": $("#begin").val(), "end": $("#end").val() }).then(async (res) => {
                 console.log(res)
                 $("table").empty()
@@ -139,8 +158,16 @@
                     $("#end ").val(res.data.end)
                     $(".category").on("change", function () { sendAnnotation($(this)) })
                     predictOrAnnotatePayments()
+                    if(res.data.payments.length == 0){
+                        $("#no-payments").show()
+                    }
+                    else {
+                        $("#no-payments").hide()
+                    }
                 })
             })
+            paymentsLoader.stopLoader();
+
         }
     </script>
 </body>

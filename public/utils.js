@@ -109,3 +109,6 @@ function firebaseLogin() {
             // ...
         });
 }
+function bunqAuth(){
+    getAuthUrl().then((res) => { window.open(res.data, "_blank") })
+}
