@@ -315,9 +315,9 @@ def get_chart(req: https_fn.CallableRequest):
     payments = get_saved_payments_with_annotation(req.auth.uid)
     payments_in_timeframe = _filter_payments_in_timeframe(
         payments,
-        _date_from_iso(req.data.get("begin")) or datetime.datetime.now(),
         _date_from_iso(req.data.get("end"))
         or datetime.datetime.now() - datetime.timedelta(days=4),
+        _date_from_iso(req.data.get("begin")) or datetime.datetime.now(),
     )
     sorted(payments_in_timeframe, key=_get_date)
     if len(payments_in_timeframe) > 0:
@@ -350,10 +350,10 @@ def _filter_payments_in_timeframe(
 ):
     payments_in_timeframe = []
     for payment in payments:
-        print(payment)
         payment_date = _get_date(payment)
         if ((not start_date) or payment_date > start_date) and (
             (not end_date) or payment_date < end_date
         ):
             payments_in_timeframe.append(payment)
+    print(payments_in_timeframe)
     return payments_in_timeframe
