@@ -143,21 +143,27 @@
                     }
                     for (payment of res.data.payments) {
                         $('table').append(`
-                            <tr id="${payment.id}">
-                                <td class="counterparty_name">${payment.counterparty_alias.name}</td>
-                                <td class="amount">&euro;${payment.amount.value}</td>
-                                <td class="description">${payment.description} </td>
-                                <td>${payment.created} </td>
+                            <tr id="${payment.features.id}">
+                                <td class="counterparty_name">${payment.features.counterparty_name}</td>
+                                <td class="amount">&euro;${payment.features.amount}</td>
+                                <td class="description">${payment.features.description} </td>
+                                <td>${payment.features.created} </td>
                                 <td><select class="category">${options}
                                 </select></td>
                                 <td></td>
                             </tr>`
-                        )
+                        );
+
+                        if (payment.annotation){
+                            setAnnotation($(`#${payment.features.id}`).find("select"), payment.annotation);
+                        }
+                        else {
+                            $(`#${payment.features.id}`).find("select").val(null);
+                        }
                     }
                     $("#begin").val(res.data.begin)
                     $("#end ").val(res.data.end)
                     $(".category").on("change", function () { sendAnnotation($(this)) })
-                    predictOrAnnotatePayments()
                     if(res.data.payments.length == 0){
                         $("#no-payments").show()
                     }
@@ -166,6 +172,7 @@
                     }
                 })
             })
+            predictPayments()
             paymentsLoader.stopLoader();
 
         }

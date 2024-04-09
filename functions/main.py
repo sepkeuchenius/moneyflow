@@ -81,7 +81,6 @@ def _get_usable_accounts(uid):
 def _get_selected_date(date_type: str, selected_iso: str, uid) -> datetime.datetime:
     if selected_iso:
         time = datetime.datetime.fromisoformat(selected_iso)
-        _user_ref(uid).child(date_type).set(time.isoformat())
         return time
     elif user_saved_date := _user_ref(uid).child(date_type).get():
         return datetime.datetime.fromisoformat(user_saved_date)
@@ -91,48 +90,120 @@ def _get_selected_date(date_type: str, selected_iso: str, uid) -> datetime.datet
         return datetime.datetime.now()
 
 
+def _set_usable_accounts(uid, accounts: list):
+    _user_ref(uid).update({"accounts": accounts})
+
+
+def _date_from_iso(iso):
+    return datetime.datetime.fromisoformat(iso) if iso else None
+
+
+def _get_start_date(uid):
+    return _date_from_iso(_user_ref(uid).child("start_date").get())
+
+
+def _set_start_date(uid, start_date: datetime.datetime):
+    _user_ref(uid).child("start_date").set(start_date.isoformat())
+
+
+def _get_end_date(uid):
+    return _date_from_iso(_user_ref(uid).child("end_date").get())
+
+
+def _set_end_date(uid, start_date: datetime.datetime):
+    _user_ref(uid).child("end_date").set(start_date.isoformat())
+
+
 @https_fn.on_call(
     region="europe-west1", secrets=[BUNQ_OAUTH_CLIENT_ID, BUNQ_CLIENT_SECRET]
 )
 def get_payments(req: https_fn.CallableRequest):
-    _ensure_api_context(req.auth.uid)
     _ensure_user_account(req.auth.uid)
-    if usable_accounts := _get_usable_accounts(req.auth.uid):
+    needs_reload = False
+    if (saved_accounts := _get_usable_accounts(req.auth.uid)) != (
+        accounts := req.data.get("accounts")
+    ):
+        if accounts:
+            _set_usable_accounts(accounts)
+            needs_reload = True
+        elif saved_accounts:
+            accounts = saved_accounts
+        else:
+            return {
+                "payments": [],
+                "begin": _get_selected_date(
+                    "start_date", req.data.get("begin"), req.auth.uid
+                ).strftime("%Y-%m-%d"),
+                "end": _get_selected_date(
+                    "end_date", req.data.get("end"), req.auth.uid
+                ).strftime("%Y-%m-%d"),
+            }
+
+    if (saved_start_date := _get_start_date(req.auth.uid)) != (
+        selected_start_date := _date_from_iso(req.data.get("begin"))
+    ) or ((not selected_start_date) and (not saved_start_date)):
+        if not selected_start_date and not saved_start_date:
+            selected_start_date = datetime.datetime.now() - datetime.timedelta(days=4)
+            _set_start_date(req.auth.uid, selected_start_date)
+            needs_reload = True
+        elif selected_start_date:
+            _set_start_date(req.auth.uid, selected_start_date)
+            needs_reload = True
+        else:
+            selected_end_date = saved_start_date
+
+    if (saved_end_date := _get_end_date(req.auth.uid)) != (
+        selected_end_date := _date_from_iso(req.data.get("end"))
+    ) or ((not selected_end_date) and (not saved_end_date)):
+        if not selected_end_date and not saved_end_date:
+            selected_end_date = datetime.datetime.now()
+            _set_end_date(req.auth.uid, selected_end_date)
+            needs_reload = True
+        elif selected_end_date:
+            _set_end_date(req.auth.uid, selected_end_date)
+            needs_reload = True
+        else:
+            selected_end_date = saved_end_date
+
+    if needs_reload:
+        _ensure_api_context(req.auth.uid)
         payments = get_serialized_payments(
-            usable_accounts,
-            _get_selected_date("start_date", req.data.get("begin"), req.auth.uid),
+            accounts,
+            selected_start_date,
         )
-        if payments_in_timeframe := _filter_payments_in_timeframe(
-            payments, req.data.get("begin"), req.data.get("end"), req.auth.uid
-        ):
+    else:
+        payments = get_saved_payments_with_features(req.auth.uid)
+
+    if payments_in_timeframe := _filter_payments_in_timeframe(
+        payments, selected_start_date, selected_end_date
+    ):
+        if needs_reload:
             for payment in payments:
-                _payments_ref().child(str(payment.get("id"))).update(
+                payment_ref = _payments_ref().child(str(payment.get("id")))
+                payment_ref.update(
                     {
                         "account": payment.get("monetary_account_id"),
                         "features": payment.get("features"),
                     }
                 )
+                if annotation := payment_ref.child("annotation").get():
+                    payment.update({"annotation": annotation})
                 _user_ref(req.auth.uid).child("payments").push(payment.get("id"))
-                start_date = _get_date(payments_in_timeframe[0]).strftime("%Y-%m-%d")
-                end_date = _get_date(payments_in_timeframe[-1]).strftime("%Y-%m-%d")
-                for payment in payments:
-                    _user_ref(req.auth.uid).child("payments").child(
-                        str(payment.get("id"))
-                    ).update(
-                        {
-                            "account": payment.get("monetary_account_id"),
-                            "features": payment.get("features"),
-                        }
-                    )
-                return {
-                    "payments": payments_in_timeframe,
-                    "begin": start_date,
-                    "end": end_date,
-                }
+        start_date = _get_date(payments_in_timeframe[0]).strftime("%Y-%m-%d")
+        end_date = _get_date(payments_in_timeframe[-1]).strftime("%Y-%m-%d")
+        return {
+            "payments": payments_in_timeframe,
+            "begin": start_date,
+            "end": end_date,
+        }
     return {
         "payments": [],
-        "begin": _get_selected_date("start_date", req.data.get("begin"), req.auth.uid).strftime("%Y-%m-%d"),
-        "end": _get_selected_date("end_date", req.data.get("end"), req.auth.uid).strftime("%Y-%m-%d"),
+        "begin": _get_selected_date(
+            "start_date", req.data.get("begin"), req.auth.uid
+        ).strftime("%Y-%m-%d"),
+        "end": _get_selected_date(
+            "end_date", req.data.get("end"), req.auth.uid
+        ).strftime("%Y-%m-%d"),
     }
 
 
@@ -155,7 +226,7 @@ def get_options(req: https_fn.CallableRequest):
 )
 def set_usable_accounts(req: https_fn.CallableRequest):
     _ensure_user_account(req.auth.uid)
-    _user_ref(req.auth.uid).update({"accounts": req.data.get("accounts")})
+    _set_usable_accounts(req.auth.uid, req.data.get("accounts"))
     return "OK"
 
 
@@ -175,7 +246,8 @@ def get_payment_prediction(req: https_fn.CallableRequest):
         counterparty_name = features.get("counterparty_name")
         for payment in get_saved_payments_with_features(req.auth.uid):
             if (
-                payment.get("features").get("counterparty_name") == counterparty_name
+                payment.get("features", {}).get("counterparty_name")
+                == counterparty_name
                 and "annotation" in payment
             ):
                 return payment.get("annotation")
@@ -188,11 +260,13 @@ def get_payment_prediction(req: https_fn.CallableRequest):
 )
 def get_batch_prediction(req: https_fn.CallableRequest):
     all_payments = get_all_payments(req.auth.uid)
+    print(all_payments)
     predictions = []
     for payment_id in req.data:
-        if features := all_payments.get(payment_id).get("features"):
+        print(payment_id)
+        if features := all_payments.get(str(payment_id)).get("features"):
             counterparty_name = features.get("counterparty_name")
-            for payment in all_payments:
+            for payment in all_payments.values():
                 if (
                     payment.get("features", {}).get("counterparty_name")
                     == counterparty_name
@@ -206,12 +280,7 @@ def get_batch_prediction(req: https_fn.CallableRequest):
 
 @https_fn.on_call(region="europe-west1")
 def get_payment_annotation(req: https_fn.CallableRequest):
-    if (
-        payment_annotation := _user_ref(req.auth.uid)
-        .get()
-        .get("payments", {})
-        .get(req.data)
-    ):
+    if payment_annotation := _payments_ref().child(req.data).get():
         return payment_annotation.get("annotation")
     return None
 
@@ -221,7 +290,7 @@ def set_payment_annotation(req: https_fn.CallableRequest):
     import datetime
 
     _ensure_user_account(req.auth.uid)
-    _user_ref(req.auth.uid).child("payments").update(
+    _payments_ref().update(
         {
             req.data.get("id"): {
                 "annotation": req.data.get("annotation"),
@@ -243,10 +312,9 @@ def _get_date(payment):
 def get_chart(req: https_fn.CallableRequest):
     from create_chart_text import create_chart
 
-    _user_ref(req.auth.uid).child("payments").get()
     payments = get_saved_payments_with_annotation(req.auth.uid)
     payments_in_timeframe = _filter_payments_in_timeframe(
-        payments, req.data.get("begin"), req.data.get("end"), req.auth.uid
+        payments, req.data.get("begin"), req.data.get("end")
     )
     sorted(payments_in_timeframe, key=_get_date)
     if len(payments_in_timeframe) > 0:
@@ -275,19 +343,14 @@ def set_user_model(req: https_fn.CallableRequest):
 
 
 def _filter_payments_in_timeframe(
-    payments, selected_begin_iso: str, selected_end_iso: str, uid
+    payments, start_date: datetime.datetime, end_date: datetime.datetime
 ):
-    begin_time = _get_selected_date(
-        date_type="start_date", selected_iso=selected_begin_iso, uid=uid
-    )
-    end_time = _get_selected_date(
-        date_type="end_date", selected_iso=selected_end_iso, uid=uid
-    )
     payments_in_timeframe = []
     for payment in payments:
+        print(payment)
         payment_date = _get_date(payment)
-        if ((not begin_time) or payment_date > begin_time) and (
-            (not end_time) or payment_date < end_time
+        if ((not start_date) or payment_date > start_date) and (
+            (not end_date) or payment_date < end_date
         ):
             payments_in_timeframe.append(payment)
     return payments_in_timeframe

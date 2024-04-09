@@ -84,34 +84,30 @@ def generate_payments(
 
 
 def get_payment_features(uid, payment_id):
-    if saved_features := get_saved_payment_features(payment_id):
-        return saved_features
-    payment_account = _get_payment_account(uid, payment_id)
-    return _get_payment_features(
-        endpoint.Payment.get(payment_id, monetary_account_id=payment_account).value
-    )
+    return get_saved_payment_features(payment_id) or {}
 
 
 def get_saved_payments_with_features(uid) -> list:
     return [
-        _payments_ref().get(payment_id).get()
-        for payment_id in _user_ref(uid).child("payments").get()
+        _payments_ref().child(str(payment_id)).get() or {}
+        for payment_id in _user_ref(uid).child("payments").get().values()
     ]
 
 
 def get_all_payments(uid) -> dict:
     return {
-        payment_id: _payments_ref().get(payment_id).get()
-        for payment_id in _user_ref(uid).child("payments").get()
+        str(payment_id): _payments_ref().child(str(payment_id)).get()
+        for payment_id in _user_ref(uid).child("payments").get().values()
     }
 
 
 def get_saved_payments_with_annotation(uid):
     if payments := _user_ref(uid).child("payments").get():
         return [
-            payment
+            payment_info
             for payment_id, payment in payments.items()
-            if "annotation" in payment
+            if (payment_info := _get_saved_payment_info(payment_id))
+            and payment_info.get("annotation")
         ]
     return []
 
@@ -120,8 +116,8 @@ def get_saved_payment_features(payment_id):
     return _get_saved_payment_info(payment_id).get("features")
 
 
-def _get_saved_payment_info(payment_id):
-    return _payments_ref().child(payment_id).get()
+def _get_saved_payment_info(payment_id) -> dict:
+    return _payments_ref().child(payment_id).get() or {}
 
 
 def _get_payment_features(payment: endpoint.Payment):
@@ -133,6 +129,7 @@ def _get_payment_features(payment: endpoint.Payment):
         "user_id": payment._counterparty_alias._determine_user_id(),
         "counterparty_monetary_account_id": payment._counterparty_alias._determine_monetary_account_id(),
         "created": payment.created,
+        "id": payment.id_
     }
 
 
