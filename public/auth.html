@@ -5,7 +5,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Welcome to Firebase Hosting</title>
+    <title>MoneyFlow</title>
 
     <!-- update the version number as needed -->
     <script defer src="/__/firebase/10.9.0/firebase-app-compat.js"></script>
@@ -25,16 +25,24 @@
     -->
     <script defer src="/__/firebase/init.js?useEmulator=true"></script>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Maitree:wght@200;300;400;500;600;700&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+        rel="stylesheet">
+  <link rel="stylesheet" href="styles/styles.css">
 
 </head>
 
 <body>
-    You've been redirected from Bunq. Shortly we'll redirect you to moneyflow.
-
-
+  <main>
+    <h1 id="hero">MoneyFlow</h1>
+    <p class="tip">Succesfully connected bunq!</p>
+    <div id="load-container"></div>
     <script src="utils.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            var loader = new Loader($("#load-container"))
             let app = firebase.app();
             saveToken = functions.httpsCallable("save_token")
             const searchParams = new URLSearchParams(window.location.search);
@@ -42,8 +50,14 @@
                 if (loadedUser) {
                     if (searchParams.has("code")) {
                         saveToken({ "code": searchParams.get("code") }).then((res) => {
-                            console.log(res)
+                            window.open("/settings", "_self")
                         })
+                    }
+                    else {
+                        $(".tip").text("Something went wrong connecting with Bunq. Redirecting.");
+                        window.setTimeout(()=>{
+                            window.open("/", "_self")
+                        }, 2000)
                     }
                 }
 

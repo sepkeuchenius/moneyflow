@@ -19,8 +19,9 @@ from bunq_utils import (
     BUNQ_OAUTH_CLIENT_ID,
     AUTH_PARAMS,
 )
-from db_utils import _user_ref, _ensure_user_account, _payments_ref
+from db_utils import _user_ref, _ensure_user_account
 import info_model
+import datetime
 
 app = initialize_app()
 
@@ -77,9 +78,7 @@ def _get_usable_accounts(uid):
     return _user_ref(uid).get().get("accounts")
 
 
-def _get_selected_date(date_type: str, selected_iso: str, uid):
-    import datetime
-
+def _get_selected_date(date_type: str, selected_iso: str, uid) -> datetime.datetime:
     if selected_iso:
         time = datetime.datetime.fromisoformat(selected_iso)
         _user_ref(uid).child(date_type).set(time.isoformat())
@@ -109,16 +108,24 @@ def get_payments(req: https_fn.CallableRequest):
             start_date = _get_date(payments_in_timeframe[0]).strftime("%Y-%m-%d")
             end_date = _get_date(payments_in_timeframe[-1]).strftime("%Y-%m-%d")
             for payment in payments:
-                _payments_ref().child(str(payment.get("id"))).update(
+                _user_ref(req.auth.uid).child("payments").child(
+                    str(payment.get("id"))
+                ).update(
                     {
                         "account": payment.get("monetary_account_id"),
                         "features": payment.get("features"),
                     }
                 )
-                _user_ref(req.auth.uid).child("payments").push(payment.get("id"))
-            return {"payments": payments_in_timeframe, "begin": start_date, "end": end_date}
-    else:
-        return {"payments": []}
+            return {
+                "payments": payments_in_timeframe,
+                "begin": start_date,
+                "end": end_date,
+            }
+    return {
+        "payments": [],
+        "begin": _get_selected_date("start_date", req.data.get("begin"), req.auth.uid).strftime("%Y-%m-%d"),
+        "end": _get_selected_date("end_date", req.data.get("end"), req.auth.uid).strftime("%Y-%m-%d"),
+    }
 
 
 @https_fn.on_call(region="europe-west1")
@@ -140,9 +147,7 @@ def get_options(req: https_fn.CallableRequest):
 )
 def set_usable_accounts(req: https_fn.CallableRequest):
     _ensure_user_account(req.auth.uid)
-    _user_ref(req.auth.uid).update(
-        {"accounts": req.data.get("accounts")}
-    )
+    _user_ref(req.auth.uid).update({"accounts": req.data.get("accounts")})
     return "OK"
 
 

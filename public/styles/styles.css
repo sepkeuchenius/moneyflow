@@ -3,17 +3,17 @@
     --second: #D4E7C5;
     --third: #BFD8AF;
     --fourth: #99BC85;
-    --black: #DBE7C9;
+    --black: #575353;
 }
 
 header {
     height: 40px;
-    background: var(--first);
+    background: var(--fourth);
     position: fixed;
     margin: 0px;
     padding: 0;
     width: 100%;
-    color: var(--fourth);
+    color: white;
     padding: 7px 20px;
     box-sizing: border-box;
 }
@@ -44,11 +44,11 @@ nav a {
     text-decoration: none;
     border-bottom: none;
     margin-right: 10px;
-    background: var(--fourth);
+    background: var(--second);
     border-radius: 5px;
     padding: 2px 8px;
     margin-top: -5px;
-    color: var(--first)
+    color: var(--black)
 }
 
 tr.positive {
@@ -81,7 +81,7 @@ tr.predicted {
 }
 
 .selected {
-    background-color: var(--first);
+    background-color: var(--third);
 }
 
 input,
@@ -121,4 +121,39 @@ td:first-child {
 td:last-child {
     border-bottom-right-radius: 10px;
     border-top-right-radius: 10px;
+}
+
+.tip {
+    margin: 10px auto;
+    border-radius: 10px;
+    background-color: var(--first);
+    width:600px;
+    padding:10px 20px;
+    text-align: center;
+}
+#hero {
+    margin: 25vh auto 50px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 100px;
+    color: var(--fourth);
+}
+#login, #bunq {
+    margin: 100px auto;
+    padding: 10px 20px;
+    font-size: 18px;
+    cursor: pointer;
+    box-sizing: border-box;
+    width: 250px;
+    margin-left: calc(50% - 125px);
+    display: none;
+}
+#load-container{
+    height: 20px;;
+    width: 100%;;
+    margin:0;
+    position: absolute;
+    padding:0;
+    left:0;
+    top:20vh;
 }
