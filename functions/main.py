@@ -122,9 +122,9 @@ def get_payments(req: https_fn.CallableRequest):
     needs_reload = False
     if (saved_accounts := _get_usable_accounts(req.auth.uid)) != (
         accounts := req.data.get("accounts")
-    ):
+    ) or ((not saved_accounts) and (not accounts)):
         if accounts:
-            _set_usable_accounts(accounts)
+            _set_usable_accounts(req.auth.uid, accounts)
             needs_reload = True
         elif saved_accounts:
             accounts = saved_accounts
@@ -150,7 +150,7 @@ def get_payments(req: https_fn.CallableRequest):
             _set_start_date(req.auth.uid, selected_start_date)
             needs_reload = True
         else:
-            selected_end_date = saved_start_date
+            selected_start_date = saved_start_date
 
     if (saved_end_date := _get_end_date(req.auth.uid)) != (
         selected_end_date := _date_from_iso(req.data.get("end"))
@@ -188,7 +188,7 @@ def get_payments(req: https_fn.CallableRequest):
                 )
                 if annotation := payment_ref.child("annotation").get():
                     payment.update({"annotation": annotation})
-                _user_ref(req.auth.uid).child("payments").push(payment.get("id"))
+                _user_ref(req.auth.uid).child("payments").child(str(payment.get("id"))).set(True)
         start_date = _get_date(payments_in_timeframe[0]).strftime("%Y-%m-%d")
         end_date = _get_date(payments_in_timeframe[-1]).strftime("%Y-%m-%d")
         return {
@@ -315,11 +315,11 @@ def get_chart(req: https_fn.CallableRequest):
     payments = get_saved_payments_with_annotation(req.auth.uid)
     payments_in_timeframe = _filter_payments_in_timeframe(
         payments,
-        _date_from_iso(req.data.get("end"))
+        _date_from_iso(req.data.get("begin"))
         or datetime.datetime.now() - datetime.timedelta(days=4),
-        _date_from_iso(req.data.get("begin")) or datetime.datetime.now(),
+        _date_from_iso(req.data.get("end")) or datetime.datetime.now(),
     )
-    sorted(payments_in_timeframe, key=_get_date)
+    print(payments_in_timeframe)
     if len(payments_in_timeframe) > 0:
         start_date = _get_date(payments_in_timeframe[0]).strftime("%Y-%m-%d")
         end_date = _get_date(payments_in_timeframe[-1]).strftime("%Y-%m-%d")
@@ -348,6 +348,9 @@ def set_user_model(req: https_fn.CallableRequest):
 def _filter_payments_in_timeframe(
     payments, start_date: datetime.datetime, end_date: datetime.datetime
 ):
+    print(payments)
+    print(start_date)
+    print(end_date)
     payments_in_timeframe = []
     for payment in payments:
         payment_date = _get_date(payment)
@@ -356,4 +359,4 @@ def _filter_payments_in_timeframe(
         ):
             payments_in_timeframe.append(payment)
     print(payments_in_timeframe)
-    return payments_in_timeframe
+    return sorted(payments_in_timeframe, key=_get_date)

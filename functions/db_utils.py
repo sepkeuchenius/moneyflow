@@ -16,5 +16,4 @@ def _ensure_user_account(user_id):
 
 def _payments_ref():
     from firebase_admin import db
-
     return db.reference("payments")

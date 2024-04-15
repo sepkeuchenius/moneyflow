@@ -6,13 +6,12 @@ async function sendAnnotation(element, predict = true) {
     const chosen_value = element.val();
     const id = element.parent().parent().attr("id");
     await setPaymentAnnotation({ "id": id, "annotation": chosen_value }).then((res) => {
-        console.log(res)
         annotationLoader.stopLoader()
     })
+    setAnnotation(element, chosen_value);
     if (predict) {
         await predictPayments()
     }
-    reloadCategory(element)
 }
 async function setAnnotation(element, category){
     element.val(category)

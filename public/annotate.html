@@ -69,15 +69,7 @@
             else {
                 $(this).removeClass("selected")
             }
-            setAccounts = functions.httpsCallable('set_usable_accounts');
-            const accounts = $('.selected').map(function(index, element){return $(element).attr("id")}).get()
-            if(accounts.length == 0){
-                $("#no-accounts").show()
-            }
-            else {
-                $("#no-accounts").hide()
-            }
-            setAccounts({ "accounts": accounts }).then(getAllPayments)
+            getAllPayments()
         }
         document.addEventListener('DOMContentLoaded', function () {
             $("input[type='date']").on("change", getAllPayments)
@@ -93,8 +85,8 @@
                                 window.open("/", "_self")
                             }
                             else {
-                                await getAllAccounts()
-                                await getAllPayments()
+                                await getAllAccounts();
+                                await getAllPayments();
                             }
                         })
                     }
@@ -132,8 +124,15 @@
         }
         async function getAllPayments() {
             $("#no-payments").hide()
+            const accounts = $('.selected').map(function(index, element){return $(element).attr("id")}).get()
+            if(accounts.length == 0){
+                $("#no-accounts").show()
+            }
+            else {
+                $("#no-accounts").hide()
+            }
             paymentsLoader = new Loader($("#payments"))
-            await getPayments({ "begin": $("#begin").val(), "end": $("#end").val() }).then(async (res) => {
+            await getPayments({ "begin": $("#begin").val(), "end": $("#end").val(), "accounts": accounts }).then(async (res) => {
                 console.log(res)
                 $("table").empty()
                 await getOptions().then((optionsRes) => {
@@ -169,10 +168,10 @@
                     }
                     else {
                         $("#no-payments").hide()
+                        predictPayments()
                     }
                 })
             })
-            predictPayments()
             paymentsLoader.stopLoader();
 
         }

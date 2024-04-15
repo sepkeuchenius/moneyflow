@@ -88,16 +88,20 @@ def get_payment_features(uid, payment_id):
 
 
 def get_saved_payments_with_features(uid) -> list:
-    return [
-        _payments_ref().child(str(payment_id)).get() or {}
-        for payment_id in _user_ref(uid).child("payments").get().values()
-    ]
+    return (
+        [
+            _payments_ref().child(str(payment_id)).get() or {}
+            for payment_id in saved_payments
+        ]
+        if (saved_payments := _user_ref(uid).child("payments").get())
+        else []
+    )
 
 
 def get_all_payments(uid) -> dict:
     return {
         str(payment_id): _payments_ref().child(str(payment_id)).get()
-        for payment_id in _user_ref(uid).child("payments").get().values()
+        for payment_id in _user_ref(uid).child("payments").get()
     }
 
 
@@ -105,7 +109,7 @@ def get_saved_payments_with_annotation(uid):
     if payments := _user_ref(uid).child("payments").get():
         return [
             payment_info
-            for payment_id in payments.values()
+            for payment_id in payments
             if (payment_info := _get_saved_payment_info(str(payment_id)))
             and payment_info.get("annotation")
         ]
@@ -129,7 +133,7 @@ def _get_payment_features(payment: endpoint.Payment):
         "user_id": payment._counterparty_alias._determine_user_id(),
         "counterparty_monetary_account_id": payment._counterparty_alias._determine_monetary_account_id(),
         "created": payment.created,
-        "id": payment.id_
+        "id": payment.id_,
     }
 
 
@@ -238,7 +242,3 @@ def get_serialized_payments(accounts: List[str], start_date: datetime.datetime):
         payment_info.update({"features": _get_payment_features(payment)})
         payments.append(payment_info)
     return payments
-
-
-def _get_payment_account(uid, payment_id):
-    return _user_ref(uid).child("payments").child(str(payment_id)).get().get("account")
