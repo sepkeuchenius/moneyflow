@@ -360,3 +360,96 @@ def _filter_payments_in_timeframe(
             payments_in_timeframe.append(payment)
     print(payments_in_timeframe)
     return sorted(payments_in_timeframe, key=_get_date)
+
+
+@https_fn.on_request(region="europe-west1")
+def fastui_main(req: https_fn.Request) -> https_fn.Response:
+    from fastui import prebuilt_html
+    from fastapi.responses import HTMLResponse
+    return prebuilt_html(title="test")
+
+
+
+@https_fn.on_request(region="europe-west1")
+def fastui_home(req: https_fn.Request) -> https_fn.Response:
+    from fastui import FastUI, AnyComponent, prebuilt_html, components as c
+    from fastui.components.display import DisplayMode, DisplayLookup
+    from fastui.events import GoToEvent, BackEvent
+    from datetime import date
+    from pydantic import BaseModel, Field
+    from fastapi.responses import HTMLResponse
+
+    class User(BaseModel):
+        id: int
+        name: str
+        dob: date = Field(title='Date of Birth')
+
+
+    # define some users
+    users = [
+        User(id=1, name='John', dob=date(1990, 1, 1)),
+        User(id=2, name='Jack', dob=date(1991, 1, 1)),
+        User(id=3, name='Jill', dob=date(1992, 1, 1)),
+        User(id=4, name='Jane', dob=date(1993, 1, 1)),
+    ]
+   
+    return page(
+                c.Heading(text='Users', level=2),  # renders `<h2>Users</h2>`
+                c.Table(
+                    data=users,
+                    # define two columns for the table
+                    columns=[
+                        # the first is the users, name rendered as a link to their profile
+                        DisplayLookup(field='name', on_click=GoToEvent(url='/user/{id}/')),
+                        # the second is the date of birth, rendered as a date
+                        DisplayLookup(field='dob', mode=DisplayMode.date),
+                    ],
+                ),
+    )
+
+
+def page(*content, title="MoneyFlow"):
+    from fastui import FastUI,  components as c
+    from fastui.events import GoToEvent, BackEvent
+    from flask import jsonify
+
+    return jsonify(FastUI([
+        c.PageTitle(text=title if title else "MoneyFlow"),
+        # c.Navbar(
+            # title='MoneyFlow',
+            # title_event=GoToEvent(url='/'),
+            # links=[
+            #     c.Link(
+            #         components=[c.Text(text='Chart')],
+            #         on_click=GoToEvent(url='/chart'),
+            #         active='startswith:/chart',
+            #     ),
+            #     c.Link(
+            #         components=[c.Text(text='Model')],
+            #         on_click=GoToEvent(url='/model'),
+            #         active='startswith:/model',
+            #     ),
+            #     c.Link(
+            #         components=[c.Text(text='Payments')],
+            #         on_click=GoToEvent(url='/payments'),
+            #         active='startswith:/payments',
+            #     ),
+            # ],
+        # ),
+        c.Page(
+            components=[
+                *((c.Heading(text=title),) if title else ()),
+                *content,
+            ],
+        ),
+        c.Footer(
+            extra_text='FastUI Demo',
+            links=[
+                c.Link(
+                    components=[c.Text(text='Github')], on_click=GoToEvent(url='https://github.com/pydantic/FastUI')
+                ),
+                c.Link(components=[c.Text(text='PyPI')], on_click=GoToEvent(url='https://pypi.org/project/fastui/')),
+                c.Link(components=[c.Text(text='NPM')], on_click=GoToEvent(url='https://www.npmjs.com/org/pydantic/')),
+            ],
+        ),
+    ]).model_dump())

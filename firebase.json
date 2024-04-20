@@ -45,6 +45,20 @@
       {
         "source": "/model",
         "destination": "/model.html"
+      },
+      {
+        "source": "/fastui",
+        "function": {
+          "functionId": "fastui_main",
+          "region": "europe-west1"
+        }
+      },
+      {
+        "source": "/api/fastui",
+        "function": {
+          "functionId": "fastui_home",
+          "region": "europe-west1"
+        }
       }
     ]
   }
