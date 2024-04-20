@@ -69,15 +69,7 @@
             else {
                 $(this).removeClass("selected")
             }
-            setAccounts = functions.httpsCallable('set_usable_accounts');
-            const accounts = $('.selected').map(function(index, element){return $(element).attr("id")}).get()
-            if(accounts.length == 0){
-                $("#no-accounts").show()
-            }
-            else {
-                $("#no-accounts").hide()
-            }
-            setAccounts({ "accounts": accounts }).then(getAllPayments)
+            getAllPayments()
         }
         document.addEventListener('DOMContentLoaded', function () {
             $("input[type='date']").on("change", getAllPayments)
@@ -93,8 +85,8 @@
                                 window.open("/", "_self")
                             }
                             else {
-                                await getAllAccounts()
-                                await getAllPayments()
+                                await getAllAccounts();
+                                await getAllPayments();
                             }
                         })
                     }
@@ -132,8 +124,15 @@
         }
         async function getAllPayments() {
             $("#no-payments").hide()
+            const accounts = $('.selected').map(function(index, element){return $(element).attr("id")}).get()
+            if(accounts.length == 0){
+                $("#no-accounts").show()
+            }
+            else {
+                $("#no-accounts").hide()
+            }
             paymentsLoader = new Loader($("#payments"))
-            await getPayments({ "begin": $("#begin").val(), "end": $("#end").val() }).then(async (res) => {
+            await getPayments({ "begin": $("#begin").val(), "end": $("#end").val(), "accounts": accounts }).then(async (res) => {
                 console.log(res)
                 $("table").empty()
                 await getOptions().then((optionsRes) => {
@@ -143,26 +142,33 @@
                     }
                     for (payment of res.data.payments) {
                         $('table').append(`
-                            <tr id="${payment.id}">
-                                <td class="counterparty_name">${payment.counterparty_alias.name}</td>
-                                <td class="amount">&euro;${payment.amount.value}</td>
-                                <td class="description">${payment.description} </td>
-                                <td>${payment.created} </td>
+                            <tr id="${payment.features.id}">
+                                <td class="counterparty_name">${payment.features.counterparty_name}</td>
+                                <td class="amount">&euro;${payment.features.amount}</td>
+                                <td class="description">${payment.features.description} </td>
+                                <td>${payment.features.created} </td>
                                 <td><select class="category">${options}
                                 </select></td>
                                 <td></td>
                             </tr>`
-                        )
+                        );
+
+                        if (payment.annotation){
+                            setAnnotation($(`#${payment.features.id}`).find("select"), payment.annotation);
+                        }
+                        else {
+                            $(`#${payment.features.id}`).find("select").val(null);
+                        }
                     }
                     $("#begin").val(res.data.begin)
                     $("#end ").val(res.data.end)
                     $(".category").on("change", function () { sendAnnotation($(this)) })
-                    predictOrAnnotatePayments()
                     if(res.data.payments.length == 0){
                         $("#no-payments").show()
                     }
                     else {
                         $("#no-payments").hide()
+                        predictPayments()
                     }
                 })
             })
