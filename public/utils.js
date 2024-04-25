@@ -13,6 +13,8 @@ var getAccounts;
 var getUserModel;
 var setUserModel;
 var batchPredict;
+var getStartDate;
+var getEndDate;
 
 class Loader {
     constructor(div, init = true, small = false) {
@@ -76,6 +78,8 @@ document.addEventListener('DOMContentLoaded', function () {
     getUserModel = functions.httpsCallable('get_user_model');
     setUserModel = functions.httpsCallable('set_user_model');
     batchPredict = functions.httpsCallable('get_batch_prediction');
+    getStartDate = functions.httpsCallable('get_start_date');
+    getEndDate = functions.httpsCallable('get_end_date');
 });
 
 function logout() {

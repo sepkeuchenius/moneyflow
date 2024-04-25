@@ -107,7 +107,7 @@
             const loader = new Loader($("main"))
             loader.startLoader()
             getChart({ "begin": $("#begin").val(), "end": $("#end").val() }).then((res) => {
-                loader.pauseLoader()
+                loader.stopLoader()
                 if (res.data.chart) {
                     $("#begin").val(res.data.begin)
                     $("#end").val(res.data.end)

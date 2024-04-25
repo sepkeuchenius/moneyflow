@@ -48,8 +48,11 @@
         <div id="accounts">
 
         </div>
-        Begin: <input type="date" name="begin" id="begin">&nbsp;&nbsp;
-        End: <input type="date" name="end" id="end"><br><br>
+        <div id="dates">
+            Begin: <input type="date" name="begin" id="begin">&nbsp;&nbsp;
+            End: <input type="date" name="end" id="end"><br><br>    
+        </div>
+        <button onclick="getAllPayments()">Load</button>
         <table id="payments">
 
         </table>
@@ -69,10 +72,8 @@
             else {
                 $(this).removeClass("selected")
             }
-            getAllPayments()
         }
         document.addEventListener('DOMContentLoaded', function () {
-            $("input[type='date']").on("change", getAllPayments)
             try {
                 var userExists;
                 var createUser;
@@ -86,7 +87,7 @@
                             }
                             else {
                                 await getAllAccounts();
-                                await getAllPayments();
+                                await getDates();
                             }
                         })
                     }
@@ -99,6 +100,18 @@
                 loadEl.textContent = 'Error loading the Firebase SDK, check the console.';
             }
         });
+        async function getDates(){
+            const datesLoader = new Loader($("#dates"))
+            await getStartDate().then(async (start_date)=>{
+                await getEndDate().then(async (end_date)=>{
+                    console.log(start_date)
+                    console.log(end_date)
+                    $("#begin").val(start_date.data)
+                    $("#end").val(end_date.data)
+                    datesLoader.stopLoader()
+                })
+            })
+        }
         async function getAllAccounts() {
             accountsLoader = new Loader($("#accounts"))
             await getAccounts().then((res) => {
@@ -141,10 +154,17 @@
                         options += `<option value="${option}">${option}</option>`
                     }
                     for (payment of res.data.payments) {
+                        var amount_class = "negative"
+                        if(payment.features.amount > 0){
+                            amount_class = "positive";
+                        } 
+                        else {
+                            amount_class = "negative";
+                        }
                         $('table').append(`
                             <tr id="${payment.features.id}">
                                 <td class="counterparty_name">${payment.features.counterparty_name}</td>
-                                <td class="amount">&euro;${payment.features.amount}</td>
+                                <td class="amount ${amount_class}">&euro;${payment.features.amount}</td>
                                 <td class="description">${payment.features.description} </td>
                                 <td>${payment.features.created} </td>
                                 <td><select class="category">${options}

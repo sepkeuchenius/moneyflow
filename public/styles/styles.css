@@ -51,6 +51,11 @@ nav a {
     color: var(--black)
 }
 
+td.positive {
+    background-color: #575353;
+    color: white;
+}
+
 tr.positive {
     background: rgb(201 230 197);
 }

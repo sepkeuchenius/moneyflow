@@ -57,7 +57,6 @@ def save_token(req: https_fn.CallableRequest):
     region="europe-west1", secrets=[BUNQ_OAUTH_CLIENT_ID, BUNQ_CLIENT_SECRET]
 )
 def has_saved_access_token(req: https_fn.CallableRequest):
-    print(AUTH_PARAMS)
     _ensure_user_account(req.auth.uid)
     return _get_user_access_token(req.auth.uid) is not None
 
@@ -113,6 +112,14 @@ def _get_end_date(uid):
 def _set_end_date(uid, start_date: datetime.datetime):
     _user_ref(uid).child("end_date").set(start_date.isoformat())
 
+@https_fn.on_call(region="europe-west1")
+def get_start_date(req: https_fn.CallableRequest):
+    return (_get_start_date(req.auth.uid) or datetime.datetime.now() - datetime.timedelta(days=7)).strftime("%Y-%m-%d")
+
+
+@https_fn.on_call(region="europe-west1")
+def get_end_date(req: https_fn.CallableRequest):
+    return (_get_end_date(req.auth.uid) or datetime.datetime.now()).strftime("%Y-%m-%d")
 
 @https_fn.on_call(
     region="europe-west1", secrets=[BUNQ_OAUTH_CLIENT_ID, BUNQ_CLIENT_SECRET]
@@ -319,7 +326,6 @@ def get_chart(req: https_fn.CallableRequest):
         or datetime.datetime.now() - datetime.timedelta(days=4),
         _date_from_iso(req.data.get("end")) or datetime.datetime.now(),
     )
-    print(payments_in_timeframe)
     if len(payments_in_timeframe) > 0:
         start_date = _get_date(payments_in_timeframe[0]).strftime("%Y-%m-%d")
         end_date = _get_date(payments_in_timeframe[-1]).strftime("%Y-%m-%d")
@@ -348,15 +354,11 @@ def set_user_model(req: https_fn.CallableRequest):
 def _filter_payments_in_timeframe(
     payments, start_date: datetime.datetime, end_date: datetime.datetime
 ):
-    print(payments)
-    print(start_date)
-    print(end_date)
     payments_in_timeframe = []
     for payment in payments:
         payment_date = _get_date(payment)
-        if ((not start_date) or payment_date > start_date) and (
-            (not end_date) or payment_date < end_date
+        if ((not start_date) or payment_date >= start_date) and (
+            (not end_date) or payment_date <= end_date
         ):
             payments_in_timeframe.append(payment)
-    print(payments_in_timeframe)
     return sorted(payments_in_timeframe, key=_get_date)

@@ -111,7 +111,6 @@ def get_saved_payments_with_annotation(uid):
             payment_info
             for payment_id in payments
             if (payment_info := _get_saved_payment_info(str(payment_id)))
-            and payment_info.get("annotation")
         ]
     return []
 
@@ -183,7 +182,7 @@ def _get_accounts():
 
 def _get_user_access_token(uid):
     from firebase_admin import db
-
+    print(uid)
     return db.reference("users").child(uid).get().get("bunq_access_token")
 
 

@@ -3,7 +3,7 @@ import plotly.graph_objects as go
 import info_model
 
 
-def increase_amount_for_category(category: [dict, list], target_category, amount):
+def increase_amount_for_category(category: Union[dict, list], target_category, amount):
     if isinstance(category, dict) and (
         target_category in category
         or any(
@@ -85,16 +85,17 @@ def sum_list(obj):
 
 def create_chart(payments: List[dict], uid):
     [info_model_in, info_model_out] = info_model.get_user_model(uid).values()
+    info_model_in["*"]["OTHER_IN"] = []
+    info_model_out["*"]["OTHER_OUT"] = []
     categories_in = info_model.generate_list_of_categories(info_model_in, [])
     for payment in payments:
         amount = float(payment["features"]["amount"])
         
-        if payment["annotation"] not in info_model.SPECIAL_CATEGORIES:
+        if payment.get("annotation") not in info_model.SPECIAL_CATEGORIES:
             if (
                 "annotation" in payment
             ):
                 if payment["annotation"] in categories_in:
-                    print("found")
                     increase_amount_for_category(
                         info_model_in, payment["annotation"], amount
                     )
@@ -102,13 +103,18 @@ def create_chart(payments: List[dict], uid):
                     increase_amount_for_category(
                         info_model_out, payment["annotation"], amount * -1
                     )
-            elif amount < 0:
-                increase_amount_for_category(info_model_out, "OTHER", amount)
             else:
-                increase_amount_for_category(info_model_in, "OTHER", amount)
-                
+                print(payment["features"])
+                if amount < 0:
+                    print('found')
+                    increase_amount_for_category(info_model_out, "OTHER_OUT", amount * -1)
+                else:
+                    increase_amount_for_category(info_model_in, "OTHER_IN", amount)
+
     sum_list(info_model_out)
     sum_list(info_model_in)
+
+    print(info_model_in)
 
     labels, source, target, value = create_dataset_for_sankey(
         info_model_out["*"], "*", [], [], [], []
