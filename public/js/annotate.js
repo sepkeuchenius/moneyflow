@@ -15,7 +15,6 @@ async function sendAnnotation(element, predict = true) {
 }
 async function setAnnotation(element, category){
     element.val(category)
-    element.prop('disabled', true);
     element.addClass("annotated")
     element.parent().parent().addClass("annotated")
     element.parent().parent().removeClass("predicted")
