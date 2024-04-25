@@ -88,19 +88,25 @@ def create_chart(payments: List[dict], uid):
     categories_in = info_model.generate_list_of_categories(info_model_in, [])
     for payment in payments:
         amount = float(payment["features"]["amount"])
-        if (
-            "annotation" in payment
-            and payment["annotation"] not in info_model.SPECIAL_CATEGORIES
-        ):
-            if payment["annotation"] in categories_in:
-                print("found")
-                increase_amount_for_category(
-                    info_model_in, payment["annotation"], amount
-                )
+        
+        if payment["annotation"] not in info_model.SPECIAL_CATEGORIES:
+            if (
+                "annotation" in payment
+            ):
+                if payment["annotation"] in categories_in:
+                    print("found")
+                    increase_amount_for_category(
+                        info_model_in, payment["annotation"], amount
+                    )
+                else:
+                    increase_amount_for_category(
+                        info_model_out, payment["annotation"], amount * -1
+                    )
+            elif amount < 0:
+                increase_amount_for_category(info_model_out, "OTHER", amount)
             else:
-                increase_amount_for_category(
-                    info_model_out, payment["annotation"], amount * -1
-                )
+                increase_amount_for_category(info_model_in, "OTHER", amount)
+                
     sum_list(info_model_out)
     sum_list(info_model_in)
 
