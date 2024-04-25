@@ -68,14 +68,14 @@
     <main>
         Begin: <input type="date" name="begin" id="begin"><br>
         End: <input type="date" name="end" id="end">
+        <button onclick="loadChart()">Load</button>
         <div id="chart"></div>
     </main>
     <script src="utils.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             try {
-                $('input').on('change', loadChart)
-                var loader = new Loader($("main"))
+                const loader = new Loader($("main"))
                 var userExists;
                 var createUser;
                 var login
@@ -89,7 +89,7 @@
                                 window.open("/", "_self")
                             }
                             else {
-                                loadChart();
+                                loader.stopLoader();
                             }
                         })
                     }
@@ -101,18 +101,20 @@
                 console.error(e);
                 loadEl.textContent = 'Error loading the Firebase SDK, check the console.';
             }
-            function loadChart() {
-                loader.startLoader()
-                getChart({ "begin": $("#begin").val(), "end": $("#end").val() }).then((res) => {
-                    loader.pauseLoader()
-                    if (res.data.chart) {
-                        $("#begin").val(res.data.begin)
-                        $("#end").val(res.data.end)
-                        $("#chart").html(res.data.chart)
-                    }
-                })
-            }
+
         });
+        function loadChart() {
+            const loader = new Loader($("main"))
+            loader.startLoader()
+            getChart({ "begin": $("#begin").val(), "end": $("#end").val() }).then((res) => {
+                loader.pauseLoader()
+                if (res.data.chart) {
+                    $("#begin").val(res.data.begin)
+                    $("#end").val(res.data.end)
+                    $("#chart").html(res.data.chart)
+                }
+            })
+        }
     </script>
 </body>
 
