@@ -197,7 +197,7 @@ def get_payments(req: https_fn.CallableRequest):
                     payment.update({"annotation": annotation})
                 _user_ref(req.auth.uid).child("payments").child(str(payment.get("id"))).set(True)
         start_date = _get_date(payments_in_timeframe[0]).strftime("%Y-%m-%d")
-        end_date = _get_date(payments_in_timeframe[-1]).strftime("%Y-%m-%d")
+        end_date = (_get_date(payments_in_timeframe[-1]) + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
         return {
             "payments": payments_in_timeframe,
             "begin": start_date,
@@ -328,7 +328,7 @@ def get_chart(req: https_fn.CallableRequest):
     )
     if len(payments_in_timeframe) > 0:
         start_date = _get_date(payments_in_timeframe[0]).strftime("%Y-%m-%d")
-        end_date = _get_date(payments_in_timeframe[-1]).strftime("%Y-%m-%d")
+        end_date = (_get_date(payments_in_timeframe[-1]) + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
         return {
             "chart": create_chart(payments_in_timeframe, req.auth.uid),
             "begin": start_date,
